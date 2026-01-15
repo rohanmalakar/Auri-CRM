@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+/* 👇 Add this line to force class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Your theme customizations (if any) go here */
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  
+  :root.dark {
+    color-scheme: dark;
+  }
+}
+
+@supports (color: oklch(0 0 0)) {
+  :root {
+    color-scheme: light;
+  }
+  
+  :root.dark {
+    color-scheme: dark;
+  }
+}
