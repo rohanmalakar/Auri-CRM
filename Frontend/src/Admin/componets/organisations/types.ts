@@ -106,6 +106,7 @@ export interface Organization {
   name_en: string;
   name_ar: string;
   email: string;
+  vat_no?: string;
   tel: string;
   country: string;
   state: string;
@@ -117,6 +118,15 @@ export interface Organization {
   type: string;
   status: string;
   picture?: string | null;
+  creation_datetime?: string;
+}
+
+// API Response Types
+export interface OrganizationApiResponse {
+  success: boolean;
+  data: {
+    organization: Organization;
+  };
 }
 
 // Organization User

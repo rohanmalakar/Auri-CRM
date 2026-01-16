@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { data, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import api from "@/utils/api";
@@ -44,31 +44,34 @@ export default function AdminLogin() {
   const onSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   dispatch(loginStart()); // Set loading true in global state
+  setMsg(""); // Clear any previous error messages
 
   try {
-    // const res = await api.post("/auth/admin/login", form);
+    const res = await api.post("/admin/login", form);
     
-    const res={
-       data:{
-        user:{
-          id:"1",
-          name:"Admin User",
-          email:form.email,
-          role:"super_admin" as const
-        },
-        token:"dummy-jwt-token"
-        }
-    }
+    // Extract data from API response
+    const { super_u_id, email, type, access_token, refresh_token } = res.data.data;
     
-    // Dispatch success with user data and token
+    // Map the API response to our Redux state structure
+    const user = {
+      id: super_u_id,
+      name: email.split('@')[0], // Extract name from email or use email
+      email: email,
+      role: type as 'super_admin'
+    };
+    
+    // Store refresh token in localStorage
+    localStorage.setItem('refresh_token', refresh_token);
+    
+    // Dispatch success with user data and access token
     dispatch(loginSuccess({
-      user: res.data.user, // Ensure API returns user object with role
-      token: res.data.token
+      user: user,
+      token: access_token
     }));
     
     navigate("/admin/dashboard");
   } catch (err: any) {
-    const errorMsg = err.response?.data?.message || "Login failed";
+    const errorMsg = err.response?.data?.message || "Login failed. Please check your credentials.";
     dispatch(loginFailure(errorMsg));
     setMsg(errorMsg);
   }

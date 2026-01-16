@@ -2,12 +2,21 @@ import axios from 'axios';
 
 let backendURL = import.meta.env.VITE_BACKEND_URL;
 
+
+console.log("backend url",backendURL);
+
 const api = axios.create({
-  baseURL: `${backendURL}/api`, // make sure /api is appended
+  baseURL: `${backendURL}/api/v1`, // make sure /api is appended
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Helper to get upload URL
+export const getUploadUrl = (path: string) => {
+  if (!path) return '';
+  return `${backendURL}/upload/${path}`;
+};
 
 // Add request interceptor for authentication if needed
 api.interceptors.request.use(

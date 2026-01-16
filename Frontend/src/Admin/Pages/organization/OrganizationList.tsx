@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "@/utils/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { getUploadUrl } from "@/utils/api";
 import { useAppSelector } from "@/redux/hooks";
 import { TRANSLATIONS } from "../../componets/organisations/constants";
-import type { Organization, FormData } from "../../componets/organisations/types";
+import type { Organization, FormData, OrganizationApiResponse } from "../../componets/organisations/types";
 import DataTable from "react-data-table-component";
 import { Plus, Search, Building2, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,232 +14,69 @@ import OrgForm from "@/Admin/componets/organisations/OrgForm";
 
 export default function OrganizationList() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { language, theme } = useAppSelector((state) => state.settings);
   const t = TRANSLATIONS[language];
   const isRtl = language === 'ar';
   const isDark = theme === 'dark';
   
-  const [data, setData] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchOrgs = async () => {
-    try {
-      setLoading(true);
-      // const res = await api.get("/organization");
-      // setData(res.data);
-      // Temporary dummy data until API is ready
-      const dummyData = [
-        {
-          org_id: "1",
-          name_en: "Tech Innovations Inc",
-          name_ar: "شركة الابتكارات التقنية",
-          email: "contact@techinnovations.com",
-          tel: "+1 (555) 123-4567",
-          country: "United States",
-          state: "California",
-          city: "San Francisco",
-          pin: "94102",
-          contact_person: "John Anderson",
-          c_mobile: "+1 (555) 123-4567",
-          c_email: "john.anderson@techinnovations.com",
-          type: "Technology",
-          status: "active",
-          picture: null
-        },
-        {
-          org_id: "2",
-          name_en: "Global Retail Solutions",
-          name_ar: "حلول التجزئة العالمية",
-          email: "info@globalretail.com",
-          tel: "+44 20 7946 0958",
-          country: "United Kingdom",
-          state: "England",
-          city: "London",
-          pin: "SW1A 1AA",
-          contact_person: "Sarah Thompson",
-          c_mobile: "+44 7700 900123",
-          c_email: "sarah.t@globalretail.com",
-          type: "Retail",
-          status: "active",
-          picture: null
-        },
-        {
-          org_id: "3",
-          name_en: "Healthcare Plus",
-          name_ar: "الرعاية الصحية بلس",
-          email: "contact@healthcareplus.sa",
-          tel: "+966 11 234 5678",
-          country: "Saudi Arabia",
-          state: "Riyadh Region",
-          city: "Riyadh",
-          pin: "11564",
-          contact_person: "Ahmed Al-Rashid",
-          c_mobile: "+966 50 123 4567",
-          c_email: "ahmed.rashid@healthcareplus.sa",
-          type: "Healthcare",
-          status: "active",
-          picture: null
-        },
-        {
-          org_id: "4",
-          name_en: "Education Hub",
-          name_ar: "مركز التعليم",
-          email: "admin@educationhub.ae",
-          tel: "+971 4 123 4567",
-          country: "United Arab Emirates",
-          state: "Dubai",
-          city: "Dubai",
-          pin: "00000",
-          contact_person: "Fatima Al-Mansoori",
-          c_mobile: "+971 50 987 6543",
-          c_email: "fatima.m@educationhub.ae",
-          type: "Education",
-          status: "active",
-          picture: null
-        },
-        {
-          org_id: "5",
-          name_en: "Finance Pro Services",
-          name_ar: "خدمات المالية المحترفة",
-          email: "support@financepro.com",
-          tel: "+1 (212) 555-7890",
-          country: "United States",
-          state: "New York",
-          city: "New York",
-          pin: "10001",
-          contact_person: "Michael Chen",
-          c_mobile: "+1 (212) 555-7891",
-          c_email: "m.chen@financepro.com",
-          type: "Finance",
-          status: "inactive",
-          picture: null
-        },
-        {
-          org_id: "6",
-          name_en: "Smart Manufacturing Co",
-          name_ar: "شركة التصنيع الذكي",
-          email: "info@smartmfg.de",
-          tel: "+49 30 12345678",
-          country: "Germany",
-          state: "Berlin",
-          city: "Berlin",
-          pin: "10115",
-          contact_person: "Hans Mueller",
-          c_mobile: "+49 170 1234567",
-          c_email: "h.mueller@smartmfg.de",
-          type: "Manufacturing",
-          status: "active",
-          picture: null
-        },
-        {
-          org_id: "7",
-          name_en: "Logistics Express",
-          name_ar: "الخدمات اللوجستية السريعة",
-          email: "contact@logisticsexp.cn",
-          tel: "+86 21 1234 5678",
-          country: "China",
-          state: "Shanghai",
-          city: "Shanghai",
-          pin: "200000",
-          contact_person: "Li Wei",
-          c_mobile: "+86 138 1234 5678",
-          c_email: "li.wei@logisticsexp.cn",
-          type: "Logistics",
-          status: "active",
-          picture: null
-        },
-        {
-          org_id: "8",
-          name_en: "Green Energy Solutions",
-          name_ar: "حلول الطاقة الخضراء",
-          email: "info@greenenergy.com.au",
-          tel: "+61 2 9876 5432",
-          country: "Australia",
-          state: "New South Wales",
-          city: "Sydney",
-          pin: "2000",
-          contact_person: "Emma Wilson",
-          c_mobile: "+61 412 345 678",
-          c_email: "e.wilson@greenenergy.com.au",
-          type: "Energy",
-          status: "active",
-          picture: null
-        },
-        {
-          org_id: "9",
-          name_en: "Media & Entertainment Group",
-          name_ar: "مجموعة الإعلام والترفيه",
-          email: "contact@mediaent.fr",
-          tel: "+33 1 23 45 67 89",
-          country: "France",
-          state: "Île-de-France",
-          city: "Paris",
-          pin: "75001",
-          contact_person: "Marie Dubois",
-          c_mobile: "+33 6 12 34 56 78",
-          c_email: "m.dubois@mediaent.fr",
-          type: "Media",
-          status: "inactive",
-          picture: null
-        },
-        {
-          org_id: "10",
-          name_en: "Construction Masters",
-          name_ar: "أساتذة البناء",
-          email: "info@constructionmasters.ca",
-          tel: "+1 (416) 555-9876",
-          country: "Canada",
-          state: "Ontario",
-          city: "Toronto",
-          pin: "M5H 2N2",
-          contact_person: "David Brown",
-          c_mobile: "+1 (416) 555-9877",
-          c_email: "d.brown@constructionmasters.ca",
-          type: "Construction",
-          status: "active",
-          picture: null
-        }
-      ];
-      setData(dummyData);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch organizations using TanStack Query
+  const { data: orgData, isLoading, error } = useQuery<OrganizationApiResponse>({
+    queryKey: ['organizations'],
+    queryFn: async () => {
+      const response = await api.get('/organization');
+      return response.data.organizations;
+    },
+  });
 
-  useEffect(() => {
-    fetchOrgs();
-  }, []);
+  // Get organization from the response
+  const organization = orgData?.data?.organization;
+  const organizations: Organization[] = organization ? [organization] : [];
 
-  const handleCreate = async (formData: FormData) => {
-    setIsSubmitting(true);
-    try {
-      await api.post("/organization", formData, { headers: { "Content-Type": "multipart/form-data" } });
-      fetchOrgs();
+  // Create organization mutation
+  const createMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      return await api.post("/organization", formData, { 
+        headers: { "Content-Type": "multipart/form-data" } 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
       setIsModalOpen(false);
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error(error);
       alert("Error creating organization");
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleCreate = async (formData: FormData) => {
+    createMutation.mutate(formData);
   };
+
+  // Delete organization mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await api.delete(`/organization/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+    },
+    onError: (error) => {
+      console.error(error);
+      alert("Error deleting organization");
+    },
+  });
 
   const handleDelete = async (id: string) => {
     if(!confirm("Are you sure?")) return;
-    try {
-      await api.delete(`/organization/${id}`);
-      setData(prev => prev.filter((item: any) => item.org_id !== id));
-    } catch (error) {
-      console.error(error);
-    }
+    deleteMutation.mutate(id);
   };
 
-  const filteredItems = data.filter((item: any) => 
+  const filteredItems = organizations.filter((item: any) => 
     (item.name_en && item.name_en.toLowerCase().includes(filterText.toLowerCase())) ||
     (item.name_ar && item.name_ar.includes(filterText))
   );
@@ -249,7 +87,7 @@ export default function OrganizationList() {
       cell: (row: any) => (
          <div className="w-10 h-10 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden my-1">
             {row.picture ? (
-              <img src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${row.picture}`} alt="Logo" className="w-full h-full object-cover" />
+              <img src={getUploadUrl(row.picture)} alt="Logo" className="w-full h-full object-cover" />
             ) : <Building2 className="w-5 h-5 text-gray-400 dark:text-gray-500" />}
          </div>
       ),
@@ -319,7 +157,7 @@ export default function OrganizationList() {
              <OrgForm 
                onSubmit={handleCreate} 
                onCancel={() => setIsModalOpen(false)}
-               isSubmitting={isSubmitting}
+               isSubmitting={createMutation.isPending}
              />
           </DialogContent>
         </Dialog>
@@ -340,7 +178,7 @@ export default function OrganizationList() {
            columns={columns}
            data={filteredItems}
            pagination
-           progressPending={loading}
+           progressPending={isLoading}
            highlightOnHover
            pointerOnHover
            onRowClicked={(row) => navigate(`/admin/organization/view/${row.org_id}`)}
