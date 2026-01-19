@@ -1,10 +1,12 @@
 import OrganizationRepository from '@repository/organization';
 import OrgUserRepository from '@repository/orgUser';
-import { Organization, OrganizationAttributes } from '@models/organization';
+import { Organization, OrganizationAttributes } from '@models/organisation';
 import { OrgUser } from '@models/orgUser';
 import { ERRORS, RequestError } from '@utils/error';
 import createLogger from '@utils/logger';
 import sequelize from '@utils/sequelize';
+import { v4 as uuidv4 } from 'uuid';
+
 
 const logger = createLogger('@organizationService');
 
@@ -21,10 +23,10 @@ export class OrganizationService {
    * Create a new organization
    */
   async createOrganization(data: {
-    name_en: string;
-    name_ar: string;
+    org_name_en: string;
+    org_name_ar: string;
     email: string;
-    vat_no?: string;
+    vat_no?: number;
     tel?: string;
     country?: string;
     state?: string;
@@ -35,6 +37,7 @@ export class OrganizationService {
     c_email?: string;
     picture?: string;
     type?: string;
+    password?: string;
   }): Promise<Organization> {
     const transaction = await sequelize.transaction();
     try {
@@ -50,6 +53,49 @@ export class OrganizationService {
         data,
         transaction
       );
+
+      // Create admin user for the organization if contact person details are provided
+      if (data.contact_person && data.c_email) {
+        const adminPassword = data.password || 'org@123';
+        const org_user_id = uuidv4();
+
+        // Check if admin user email already exists
+        let emailExists = false;
+        try {
+          await this.orgUserRepository.checkIfOrgUserExists(
+            data.c_email,
+            data.c_mobile || '',
+            transaction
+          );
+        } catch (e) {
+          // If email already exists, log warning and continue
+          if (e instanceof RequestError && e.statusCode === 400) {
+            logger.warn(`Admin user email ${data.c_email} already exists, skipping admin creation`);
+            emailExists = true;
+          } else {
+            throw e;
+          }
+        }
+
+        // Create admin user only if email doesn't exist
+        if (!emailExists) {
+          await this.orgUserRepository.createOrgUser(
+            {
+              org_user_id,
+              org_id: organization.org_id,
+              name: data.contact_person,
+              email: data.c_email,
+              password: adminPassword,
+              tel: data.c_mobile,
+              designation: 'Admin',
+              status: 'Active',
+            },
+            transaction
+          );
+
+          logger.info(`Admin user created for organization ${organization.org_id}`);
+        }
+      }
 
       await transaction.commit();
       return organization;

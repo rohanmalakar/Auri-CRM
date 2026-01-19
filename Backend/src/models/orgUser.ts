@@ -8,23 +8,24 @@ import {
   CreatedAt,
   BeforeCreate,
   BeforeUpdate,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
 import bcrypt from 'bcrypt';
+import { OrgBranch } from './branch';
 
 export interface OrgUserAttributes {
   org_user_id: string;
   org_id: string;
+  branch_id?: string;
   name: string;
   email: string;
   password: string;
   tel?: string;
   address?: string;
   picture?: string;
-  status: 'Active' | 'Inactive';
-  type: string;
-  app_access?: string;
-  designation?: number;
-  station_id?: number;
+  status: 'Active' | 'Inactive' | 'Deleted';
+  designation?: 'Cashier' | 'Manager' | 'Admin' | 'Other';
   creation_datetime: Date;
 }
 
@@ -45,6 +46,13 @@ export class OrgUser extends Model<OrgUserAttributes> {
     allowNull: false,
   })
   org_id!: string;
+
+  @ForeignKey(() => OrgBranch)
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  branch_id?: string;
 
   @Column({
     type: DataType.STRING,
@@ -85,34 +93,18 @@ export class OrgUser extends Model<OrgUserAttributes> {
 
   @Default('Active')
   @Column({
-    type: DataType.ENUM('Active', 'Inactive'),
+    type: DataType.ENUM('Active', 'Inactive', 'Deleted'),
     allowNull: false,
   })
-  status!: 'Active' | 'Inactive';
+  status!: 'Active' | 'Inactive' | "Deleted";
+
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  type!: string;
-
-  @Column({
-    type: DataType.STRING,
+    type: DataType.ENUM('Cashier', 'Manager', 'Admin','Other'),
     allowNull: true,
+    defaultValue: 'Cashier'
   })
-  app_access?: string;
-
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-  })
-  designation?: number;
-
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-  })
-  station_id?: number;
+  designation?: 'Cashier' | 'Manager' | 'Admin' | "Other";
 
   @Default(DataType.NOW)
   @CreatedAt
@@ -126,18 +118,14 @@ export class OrgUser extends Model<OrgUserAttributes> {
   @BeforeCreate
   static async hashPasswordBeforeCreate(instance: OrgUser) {
     if (instance.password) {
-      console.log('🔐 beforeCreate hook - Hashing password');
       instance.password = await bcrypt.hash(instance.password, 10);
-      console.log('✅ Password hashed successfully');
     }
   }
 
   @BeforeUpdate
   static async hashPasswordBeforeUpdate(instance: OrgUser) {
     if (instance.changed('password')) {
-      console.log('🔐 beforeUpdate hook - Password changed, hashing new password');
       instance.password = await bcrypt.hash(instance.password, 10);
-      console.log('✅ Password hashed successfully');
     }
   }
 
@@ -151,6 +139,9 @@ export class OrgUser extends Model<OrgUserAttributes> {
     const { password, ...safeUser } = this.get({ plain: true });
     return safeUser;
   }
+
+  @BelongsTo(() => OrgBranch)
+  branch!: OrgBranch;
 }
 
 export default OrgUser;

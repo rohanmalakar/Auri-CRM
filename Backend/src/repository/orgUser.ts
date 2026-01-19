@@ -17,7 +17,10 @@ export default class OrgUserRepository {
     try {
       // Check if email exists
       const userByEmail = await OrgUser.findOne({
-        where: { email },
+        where: { 
+          email,
+          status: ['Active', 'Inactive']
+        },
         transaction,
       });
       
@@ -28,7 +31,10 @@ export default class OrgUserRepository {
       // Check if phone exists
       if (tel) {
         const userByPhone = await OrgUser.findOne({
-          where: { tel },
+          where: { 
+            tel,
+            status: ['Active', 'Inactive']
+          },
           transaction,
         });
         
@@ -69,7 +75,13 @@ export default class OrgUserRepository {
     transaction?: Transaction
   ): Promise<OrgUser> {
     try {
-      const orgUser = await OrgUser.findByPk(org_user_id, { transaction });
+      const orgUser = await OrgUser.findOne({
+        where: { 
+          org_user_id,
+          status: ['Active', 'Inactive']
+        },
+        transaction
+      });
       
       if (!orgUser) {
         throw ERRORS.USER_NOT_FOUND;
@@ -94,7 +106,10 @@ export default class OrgUserRepository {
   ): Promise<OrgUser> {
     try {
       const orgUser = await OrgUser.findOne({
-        where: { email },
+        where: { 
+          email,
+          status: ['Active', 'Inactive']
+        },
         transaction,
       });
       
@@ -117,7 +132,12 @@ export default class OrgUserRepository {
    */
   async getAllOrgUsers(transaction?: Transaction): Promise<OrgUser[]> {
     try {
-      const orgUsers = await OrgUser.findAll({ transaction });
+      const orgUsers = await OrgUser.findAll({ 
+        where: {
+          status: ['Active', 'Inactive']
+        },
+        transaction 
+      });
       return orgUsers;
     } catch (e) {
       logger.error('Error getting all org users:', e);
@@ -134,7 +154,10 @@ export default class OrgUserRepository {
   ): Promise<OrgUser[]> {
     try {
       const orgUsers = await OrgUser.findAll({
-        where: { org_id },
+        where: { 
+          org_id,
+          status: ['Active', 'Inactive']
+        },
         transaction,
       });
       return orgUsers;
@@ -166,7 +189,7 @@ export default class OrgUserRepository {
   }
 
   /**
-   * Delete org user (soft delete by setting status to Inactive)
+   * Delete org user (soft delete by setting status to Deleted)
    */
   async deleteOrgUser(
     org_user_id: string,
@@ -174,7 +197,7 @@ export default class OrgUserRepository {
   ): Promise<void> {
     try {
       const orgUser = await this.getOrgUserById(org_user_id, transaction);
-      await orgUser.update({ status: 'Inactive' }, { transaction });
+      await orgUser.update({ status: 'Deleted' }, { transaction });
     } catch (e) {
       if (e instanceof RequestError) {
         throw e;

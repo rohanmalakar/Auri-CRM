@@ -4,6 +4,7 @@ import {JWT_AUTH_SECRET} from "@utils/contants"
 import { Response, NextFunction, RequestHandler } from 'express';
 import { ERRORS, RequestError } from '@utils/error';
 import { Request } from '@customTypes/connection';
+import { authPlugins } from 'mysql2';
 
 
 
@@ -25,6 +26,7 @@ export function decode(token: string): Promise<JwtPayload> {
 
 export const verifyToken: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   let token = req.cookies?.access_token || req.headers["authorization"]?.split(' ')[1] as string;
+
   
   if (!token) {
     next(ERRORS.AUTH_NO_TOKEN_FOUND);
@@ -36,13 +38,14 @@ export const verifyToken: RequestHandler = (req: Request, res: Response, next: N
       next(ERRORS.AUTH_UNAUTHERISED);
       return;
     }
+
+    console.log("user decoded in the verify token",decoded);
     
     req.user = {
       id: (decoded as any).id,
       org_id: (decoded as any).org_id,
-      type: (decoded as any).type,
-      is_admin: (decoded as any).is_admin,
-      is_super_admin: (decoded as any).is_super_admin,
+      branch_id: (decoded as any).branch_id,
+      designation: (decoded as any).designation,
     };
     next();
   });
@@ -50,6 +53,8 @@ export const verifyToken: RequestHandler = (req: Request, res: Response, next: N
 
 export const verifySuperAdmin: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   let token = req.headers["authorization"]?.split(' ')[1] as string;
+
+  console.log(token);
   
   if (!token) {
     next(ERRORS.AUTH_NO_TOKEN_FOUND);
@@ -66,10 +71,11 @@ export const verifySuperAdmin: RequestHandler = (req: Request, res: Response, ne
       next(new RequestError('Only super admin can access this route', 10013, 403));
       return;
     }
+
+    console.log("user decoded in the verify super admin", decoded);
     
     req.user = {
       id: (decoded as any).id,
-      type: (decoded as any).type,
       is_super_admin: (decoded as any).is_super_admin,
     };
     next();

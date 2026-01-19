@@ -24,17 +24,16 @@ export default function OrganizationList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch organizations using TanStack Query
-  const { data: orgData, isLoading, error } = useQuery<OrganizationApiResponse>({
+  const { data: orgData, isLoading } = useQuery<OrganizationApiResponse>({
     queryKey: ['organizations'],
     queryFn: async () => {
       const response = await api.get('/organization');
-      return response.data.organizations;
+      return response.data;
     },
   });
 
   // Get organization from the response
-  const organization = orgData?.data?.organization;
-  const organizations: Organization[] = organization ? [organization] : [];
+  const organizations: Organization[] = orgData?.data?.organizations || [];
 
   // Create organization mutation
   const createMutation = useMutation({
@@ -77,8 +76,8 @@ export default function OrganizationList() {
   };
 
   const filteredItems = organizations.filter((item: any) => 
-    (item.name_en && item.name_en.toLowerCase().includes(filterText.toLowerCase())) ||
-    (item.name_ar && item.name_ar.includes(filterText))
+    (item.org_name_en && item.org_name_en.toLowerCase().includes(filterText.toLowerCase())) ||
+    (item.org_name_ar && item.org_name_ar.includes(filterText))
   );
 
   const columns = [
@@ -95,8 +94,8 @@ export default function OrganizationList() {
       center: true
     },
     {
-      name: language === 'en' ? t.fields.name_en : t.fields.name_ar,
-      selector: (row: any) => language === 'en' ? row.name_en : row.name_ar,
+      name: language === 'en' ? t.fields.org_name_en : t.fields.org_name_ar,
+      selector: (row: any) => language === 'en' ? row.org_name_en : row.org_name_ar,
       sortable: true,
       grow: 2
     },

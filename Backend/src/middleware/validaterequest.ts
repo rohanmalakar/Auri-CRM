@@ -14,19 +14,31 @@ export declare type RequestValidation = {
   };
 
 const validateRequest = ({body, query, params}: RequestValidation) => (req: Request, res: Response, next: NextFunction) => {
+
     if(body) {
         const parsed = body.safeParse(req.body)
-        console.log("request body error",parsed);
         if(!parsed.success) {
-            logger.error(parsed.error)
-            next(ERRORS.INVALID_REQUEST_BODY)
+            const errors = parsed.error.issues.map((err) => ({
+                path: err.path.join('.') || 'root',
+                message: err.message,
+                code: err.code,
+            }));
+            logger.error('🔴 Body Validation Error:', JSON.stringify(errors, null, 2));
+            console.error('❌ Body Validation Error Details:', errors);
+            next(ERRORS.INVALID_INPUT)
             return;
         }
     }
     if(query) {
         const parsed = query.safeParse(req.query)
         if(!parsed.success) {
-            logger.error(parsed.error)
+            const errors = parsed.error.issues.map((err) => ({
+                path: err.path.join('.') || 'root',
+                message: err.message,
+                code: err.code,
+            }));
+            logger.error('🔴 Query Parameter Validation Error:', JSON.stringify(errors, null, 2));
+            console.error('❌ Query Validation Error Details:', errors);
             next(ERRORS.INVALID_QUERY_PARAMETER)
             return;
         } 

@@ -15,7 +15,7 @@ const api = axios.create({
 // Helper to get upload URL
 export const getUploadUrl = (path: string) => {
   if (!path) return '';
-  return `${backendURL}/upload/${path}`;
+  return `${backendURL}/uploads/${path}`;
 };
 
 // Add request interceptor for authentication if needed

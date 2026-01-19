@@ -10,10 +10,15 @@ export const TRANSLATIONS: Translations = {
       users: "Organization Users",
     },
     fields: {
-      name_en: "Organization Name (English)",
-      name_ar: "Organization Name (Arabic)",
+      org_name_en: "Organization Name (English)",
+      org_name_ar: "Organization Name (Arabic)",
+      name_en: "Name (English)",
+      name_ar: "Name (Arabic)",
       email: "Email",
       phone: "Phone Number",
+      tel: "Telephone",
+      mobile: "Mobile",
+      vat_no: "VAT Number",
       type: "Type",
       country: "Country",
       state: "State",
@@ -22,8 +27,13 @@ export const TRANSLATIONS: Translations = {
       contact_person: "Contact Person",
       contact_mobile: "Contact Mobile",
       contact_email: "Contact Email",
+      currency: "Currency",
+      timezone: "Timezone",
       status: "Status",
-      logo: "Logo"
+      logo: "Logo",
+      basic_info: "Basic Information",
+      location: "Location Details",
+      creation_date: "Creation Date"
     },
     actions: {
       submit: "Create Organization",
@@ -33,7 +43,8 @@ export const TRANSLATIONS: Translations = {
       view: "View",
       edit: "Edit",
       search: "Search organizations...",
-      addUser: "Add User"
+      addUser: "Add User",
+      back: "Back"
     },
     placeholders: {
       select: "Select...",
@@ -53,10 +64,15 @@ export const TRANSLATIONS: Translations = {
       users: "مستخدمي المنظمة",
     },
     fields: {
-      name_en: "اسم المنظمة (إنجليزي)",
-      name_ar: "اسم المنظمة (عربي)",
+      org_name_en: "اسم المنظمة (إنجليزي)",
+      org_name_ar: "اسم المنظمة (عربي)",
+      name_en: "الاسم (إنجليزي)",
+      name_ar: "الاسم (عربي)",
       email: "البريد الإلكتروني",
       phone: "رقم الهاتف",
+      tel: "الهاتف",
+      mobile: "الجوال",
+      vat_no: "الرقم الضريبي",
       type: "النوع",
       country: "الدولة",
       state: "المنطقة / المحافظة",
@@ -65,8 +81,13 @@ export const TRANSLATIONS: Translations = {
       contact_person: "الشخص المسؤول",
       contact_mobile: "جوال المسؤول",
       contact_email: "بريد المسؤول",
+      currency: "العملة",
+      timezone: "المنطقة الزمنية",
       status: "الحالة",
-      logo: "الشعار"
+      logo: "الشعار",
+      basic_info: "المعلومات الأساسية",
+      location: "تفاصيل الموقع",
+      creation_date: "تاريخ الإنشاء"
     },
     actions: {
       submit: "إنشاء المنظمة",
@@ -76,7 +97,8 @@ export const TRANSLATIONS: Translations = {
       view: "عرض",
       edit: "تعديل",
       search: "بحث عن منظمة...",
-      addUser: "إضافة مستخدم"
+      addUser: "إضافة مستخدم",
+      back: "رجوع"
     },
     placeholders: {
       select: "اختر...",

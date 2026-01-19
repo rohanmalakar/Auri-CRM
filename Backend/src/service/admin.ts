@@ -10,6 +10,7 @@ const logger = createLogger('@adminService');
 export interface AuthAdmin {
   super_u_id: string;
   email: string;
+  name: string;
   type: string;
   access_token: string;
   refresh_token: string;
@@ -26,6 +27,7 @@ export class AdminService {
    * Create a new admin
    */
   async createAdmin(data: {
+    name: string;
     email: string;
     password: string;
     type?: string;
@@ -81,6 +83,7 @@ export class AdminService {
       return {
         super_u_id: admin.super_u_id,
         email: admin.email,
+        name: admin.name,
         type: admin.type,
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -154,7 +157,7 @@ export class AdminService {
   }
 
   /**
-   * Delete admin
+   * Delete admin (soft delete)
    */
   async deleteAdmin(super_u_id: string): Promise<void> {
     const transaction = await sequelize.transaction();

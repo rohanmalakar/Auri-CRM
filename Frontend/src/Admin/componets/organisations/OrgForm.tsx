@@ -9,6 +9,69 @@ import { useAppSelector } from "@/redux/hooks";
 import { TRANSLATIONS } from "./constants";
 import type { FormData, OrgFormProps, InputWithErrorProps } from "./types";
 
+// InputWithError component moved outside to prevent re-creation on each render
+const InputWithError = ({ 
+  name, 
+  label, 
+  type = "text", 
+  required = false, 
+  icon: Icon, 
+  dir, 
+  placeholder,
+  value,
+  onChange,
+  onBlur,
+  error,
+  touched,
+  isRtl
+}: InputWithErrorProps & {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  error?: string;
+  touched?: boolean;
+  isRtl: boolean;
+}) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={name} className="text-sm font-medium text-gray-700 dark:text-gray-200">
+      {label} {required && <span className="text-red-500 dark:text-red-400">*</span>}
+    </Label>
+    <div className="relative">
+      {Icon && (
+        <Icon className={`absolute ${isRtl ? 'right-3' : 'left-3'} top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500`} />
+      )}
+      <Input 
+        id={name}
+        name={name} 
+        type={type}
+        value={value} 
+        onChange={onChange}
+        onBlur={onBlur}
+        required={required}
+        dir={dir}
+        placeholder={placeholder}
+        className={`
+          ${Icon ? (isRtl ? 'pr-9' : 'pl-9') : ''}
+          bg-white dark:bg-zinc-900 
+          border-gray-300 dark:border-zinc-700
+          text-gray-900 dark:text-gray-100
+          placeholder:text-gray-400 dark:placeholder:text-gray-500
+          focus:ring-2 focus:ring-pink-500 dark:focus:ring-pink-600
+          focus:border-transparent
+          transition-all duration-200
+          ${touched && error ? 'border-red-500 dark:border-red-500 focus:ring-red-500' : ''}
+        `}
+      />
+    </div>
+    {touched && error && (
+      <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 mt-1">
+        <AlertCircle className="h-3 w-3" />
+        <span>{error}</span>
+      </div>
+    )}
+  </div>
+);
+
 export default function OrgForm({ 
   initialData, 
   onSubmit, 
@@ -20,9 +83,10 @@ export default function OrgForm({
   const isRtl = language === 'ar';
 
   const [formData, setFormData] = useState<FormData>({
-    name_en: "",
-    name_ar: "",
+    org_name_en: "",
+    org_name_ar: "",
     email: "",
+    vat_no: "",
     tel: "",
     country: "",
     state: "",
@@ -32,7 +96,9 @@ export default function OrgForm({
     c_mobile: "",
     c_email: "",
     type: "",
-    status: "active",
+    currency: "USD",
+    timezone: "UTC",
+    status: "Active",
     ...initialData
   });
 
@@ -52,7 +118,7 @@ export default function OrgForm({
   };
 
   const validateField = (name: string, value: string): string => {
-    const requiredFields = ['name_en', 'name_ar', 'email', 'tel', 'country', 'city', 'contact_person', 'c_mobile', 'c_email'];
+    const requiredFields = ['org_name_en', 'org_name_ar', 'email', 'tel', 'country', 'city', 'contact_person', 'c_mobile', 'c_email', 'currency', 'timezone'];
     
     if (requiredFields.includes(name) && !value.trim()) {
       return t.validation.required;
@@ -64,6 +130,11 @@ export default function OrgForm({
 
     if ((name === 'tel' || name === 'c_mobile') && value && !validatePhone(value)) {
       return t.validation.invalidPhone;
+    }
+
+    // VAT number validation: 5-30 characters if provided
+    if (name === 'vat_no' && value && (value.length < 5 || value.length > 30)) {
+      return 'VAT number must be between 5 and 30 characters';
     }
 
     return '';
@@ -108,7 +179,7 @@ export default function OrgForm({
     const newTouched: Record<string, boolean> = {};
     
     Object.keys(formData).forEach(key => {
-      const error = validateField(key, formData[key as keyof FormData]);
+      const error = validateField(key, (formData[key as keyof FormData] ?? '') as string);
       if (error) {
         newErrors[key] = error;
       }
@@ -123,77 +194,41 @@ export default function OrgForm({
     }
 
     const data = new FormData();
-    Object.keys(formData).forEach(key => data.append(key, formData[key as keyof FormData]));
+    Object.keys(formData).forEach(key => {
+      const value = formData[key as keyof FormData];
+      if (value !== undefined && value !== null) {
+        data.append(key, String(value));
+      }
+    });
     if (file) data.append("picture", file);
     await onSubmit(data as any);
   };
 
-  const InputWithError = ({ name, label, type = "text", required = false, icon: Icon, dir, placeholder }: InputWithErrorProps) => (
-    <div className="space-y-1.5">
-      <Label htmlFor={name} className="text-sm font-medium text-gray-700 dark:text-gray-200">
-        {label} {required && <span className="text-red-500 dark:text-red-400">*</span>}
-      </Label>
-      <div className="relative">
-        {Icon && (
-          <Icon className={`absolute ${isRtl ? 'right-3' : 'left-3'} top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500`} />
-        )}
-        <Input 
-          id={name}
-          name={name} 
-          type={type}
-          value={formData[name]} 
-          onChange={handleChange}
-          onBlur={handleBlur}
-          required={required}
-          dir={dir}
-          placeholder={placeholder}
-          className={`
-            ${Icon ? (isRtl ? 'pr-9' : 'pl-9') : ''}
-            bg-white dark:bg-zinc-900 
-            border-gray-300 dark:border-zinc-700
-            text-gray-900 dark:text-gray-100
-            placeholder:text-gray-400 dark:placeholder:text-gray-500
-            focus:ring-2 focus:ring-pink-500 dark:focus:ring-pink-600
-            focus:border-transparent
-            transition-all duration-200
-            ${touched[name] && errors[name] ? 'border-red-500 dark:border-red-500 focus:ring-red-500' : ''}
-          `}
-        />
-      </div>
-      {touched[name] && errors[name] && (
-        <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 mt-1">
-          <AlertCircle className="h-3 w-3" />
-          <span>{errors[name]}</span>
-        </div>
-      )}
-    </div>
-  );
-
   return (
-    <div dir={isRtl ? "rtl" : "ltr"} className="space-y-6 p-2 lg:min-w-5xl lg:max-w-6xl mx-auto">
+    <div dir={isRtl ? "rtl" : "ltr"} className="space-y-4 sm:space-y-6 p-1 sm:p-2 w-full max-w-7xl mx-auto">
       
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 mb-6 border-b border-gray-200 dark:border-zinc-700">
+      <div className="flex flex-col gap-3 sm:gap-4 pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-zinc-700">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             {initialData ? t.actions.edit : t.actions.submit}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
             {isRtl ? 'إدارة تفاصيل وإعدادات المنظمة' : 'Manage organization details and settings'}
           </p>
         </div>
         
-        <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 px-4 py-3 rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-3 bg-linear-to-r from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm w-fit">
            <Label htmlFor="status-switch" className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-200">
              {t.fields.status}
            </Label>
            <Switch 
              id="status-switch"
-             checked={formData.status === 'active'}
-             onCheckedChange={(checked) => setFormData({...formData, status: checked ? 'active' : 'inactive'})}
+             checked={formData.status === 'Active'}
+             onCheckedChange={(checked) => setFormData({...formData, status: checked ? 'Active' : 'Inactive'})}
            />
            <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${
-             formData.status === 'active' 
+             formData.status === 'Active' 
                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
            }`}>
@@ -202,7 +237,7 @@ export default function OrgForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Identity Card */}
         <div className="lg:col-span-1">
           <Card className="h-full border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -221,7 +256,7 @@ export default function OrgForm({
               {/* Logo Upload */}
               <div className="flex flex-col items-center">
                 <div className="relative group">
-                  <div className="w-36 h-36 rounded-full border-2 border-dashed border-gray-300 dark:border-zinc-600 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-900 dark:to-zinc-800 overflow-hidden transition-all duration-300 group-hover:border-pink-500 dark:group-hover:border-pink-400 group-hover:shadow-lg">
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full border-2 border-dashed border-gray-300 dark:border-zinc-600 flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-zinc-900 dark:to-zinc-800 overflow-hidden transition-all duration-300 group-hover:border-pink-500 dark:group-hover:border-pink-400 group-hover:shadow-lg">
                     {preview ? (
                       <img src={preview} alt="Logo" className="w-full h-full object-cover" />
                     ) : (
@@ -252,22 +287,40 @@ export default function OrgForm({
               {/* Organization Names */}
               <div className="space-y-4">
                 <InputWithError 
-                  name="name_en"
-                  label={t.fields.name_en}
+                  name="org_name_en"
+                  label={t.fields.org_name_en}
                   required={true}
                   placeholder="e.g. Tech Corp"
+                  value={formData.org_name_en}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.org_name_en}
+                  touched={touched.org_name_en}
+                  isRtl={isRtl}
                 />
                 <InputWithError 
-                  name="name_ar"
-                  label={t.fields.name_ar}
+                  name="org_name_ar"
+                  label={t.fields.org_name_ar}
                   required={true}
                   dir="rtl"
                   placeholder="مثال: شركة التقنية"
+                  value={formData.org_name_ar}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.org_name_ar}
+                  touched={touched.org_name_ar}
+                  isRtl={isRtl}
                 />
                 <InputWithError 
                   name="type"
                   label={t.fields.type}
                   placeholder={isRtl ? "مثال: تجزئة" : "e.g. Retail"}
+                  value={formData.type || ""}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.type}
+                  touched={touched.type}
+                  isRtl={isRtl}
                 />
               </div>
             </CardContent>
@@ -297,6 +350,12 @@ export default function OrgForm({
                   required={true}
                   icon={Mail}
                   placeholder={isRtl ? "مثال@شركة.com" : "email@company.com"}
+                  value={formData.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.email}
+                  touched={touched.email}
+                  isRtl={isRtl}
                 />
                 <InputWithError 
                   name="tel"
@@ -304,6 +363,47 @@ export default function OrgForm({
                   required={true}
                   icon={Phone}
                   placeholder="+1 234 567 8900"
+                  value={formData.tel || ""}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.tel}
+                  touched={touched.tel}
+                  isRtl={isRtl}
+                />
+                <InputWithError 
+                  name="vat_no"
+                  label={t.fields.vat_no}
+                  placeholder={isRtl ? "مثال: 125454" : "e.g. 125454"}
+                  value={formData.vat_no || ""}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.vat_no}
+                  touched={touched.vat_no}
+                  isRtl={isRtl}
+                />
+                <InputWithError 
+                  name="currency"
+                  label={t.fields.currency}
+                  required={true}
+                  placeholder={isRtl ? "مثال: USD" : "e.g. USD"}
+                  value={formData.currency}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.currency}
+                  touched={touched.currency}
+                  isRtl={isRtl}
+                />
+                <InputWithError 
+                  name="timezone"
+                  label={t.fields.timezone}
+                  required={true}
+                  placeholder={isRtl ? "مثال: UTC" : "e.g. UTC"}
+                  value={formData.timezone}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.timezone}
+                  touched={touched.timezone}
+                  isRtl={isRtl}
                 />
              </CardContent>
           </Card>
@@ -327,22 +427,46 @@ export default function OrgForm({
                  required={true}
                  icon={Globe}
                  placeholder={isRtl ? "مثال: السعودية" : "e.g. United States"}
+                 value={formData.country || ""}
+                 onChange={handleChange}
+                 onBlur={handleBlur}
+                 error={errors.country}
+                 touched={touched.country}
+                 isRtl={isRtl}
                />
                <InputWithError 
                  name="city"
                  label={t.fields.city}
                  required={true}
                  placeholder={isRtl ? "مثال: الرياض" : "e.g. New York"}
+                 value={formData.city || ""}
+                 onChange={handleChange}
+                 onBlur={handleBlur}
+                 error={errors.city}
+                 touched={touched.city}
+                 isRtl={isRtl}
                />
                <InputWithError 
                  name="state"
                  label={t.fields.state}
                  placeholder={isRtl ? "مثال: الشرقية" : "e.g. California"}
+                 value={formData.state || ""}
+                 onChange={handleChange}
+                 onBlur={handleBlur}
+                 error={errors.state}
+                 touched={touched.state}
+                 isRtl={isRtl}
                />
                <InputWithError 
                  name="pin"
                  label={t.fields.pin}
                  placeholder={isRtl ? "مثال: 12345" : "e.g. 10001"}
+                 value={formData.pin || ""}
+                 onChange={handleChange}
+                 onBlur={handleBlur}
+                 error={errors.pin}
+                 touched={touched.pin}
+                 isRtl={isRtl}
                />
              </CardContent>
           </Card>
@@ -367,6 +491,12 @@ export default function OrgForm({
                    required={true}
                    icon={User}
                    placeholder={isRtl ? "مثال: أحمد محمد" : "e.g. John Smith"}
+                   value={formData.contact_person || ""}
+                   onChange={handleChange}
+                   onBlur={handleBlur}
+                   error={errors.contact_person}
+                   touched={touched.contact_person}
+                   isRtl={isRtl}
                  />
                </div>
                <InputWithError 
@@ -375,6 +505,12 @@ export default function OrgForm({
                  required={true}
                  icon={Phone}
                  placeholder="+1 234 567 8900"
+                 value={formData.c_mobile || ""}
+                 onChange={handleChange}
+                 onBlur={handleBlur}
+                 error={errors.c_mobile}
+                 touched={touched.c_mobile}
+                 isRtl={isRtl}
                />
                <InputWithError 
                  name="c_email"
@@ -383,6 +519,12 @@ export default function OrgForm({
                  required={true}
                  icon={Mail}
                  placeholder={isRtl ? "شخص@شركة.com" : "person@company.com"}
+                 value={formData.c_email || ""}
+                 onChange={handleChange}
+                 onBlur={handleBlur}
+                 error={errors.c_email}
+                 touched={touched.c_email}
+                 isRtl={isRtl}
                />
              </CardContent>
           </Card>
@@ -404,7 +546,7 @@ export default function OrgForm({
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting} 
-          className="w-full sm:w-auto bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white min-w-[150px] shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto bg-linear-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white min-w-37.5 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {initialData ? t.actions.update : t.actions.submit}

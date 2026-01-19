@@ -45,7 +45,7 @@ export default function RecentActivity({ data, language }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[300px] pr-4">
+          <ScrollArea className="h-75 pr-4">
             <div className="space-y-4">
               {data.recentOrganizations.length > 0 ? (
                 data.recentOrganizations.map((org) => (
@@ -76,7 +76,7 @@ export default function RecentActivity({ data, language }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[300px] pr-4">
+          <ScrollArea className="h-75 pr-4">
             <div className="space-y-4">
               {data.recentUsers.length > 0 ? (
                 data.recentUsers.map((user) => (

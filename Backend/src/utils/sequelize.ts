@@ -1,8 +1,10 @@
 import { Sequelize } from 'sequelize-typescript';
 import { MYSQL_DB_CONFIG_NEW } from './contants';
 import { OrgUser } from '@models/orgUser';
-import { Organization } from '@models/organization';
+import { Organization } from '@models/organisation';
 import { Admin } from '@models/admin';
+import { OrgBranch } from '@models/branch';
+
 
 // Create Sequelize instance
 const sequelize = new Sequelize({
@@ -12,7 +14,12 @@ const sequelize = new Sequelize({
   username: MYSQL_DB_CONFIG_NEW.user,
   password: MYSQL_DB_CONFIG_NEW.password,
   database: MYSQL_DB_CONFIG_NEW.database,
-  models: [OrgUser, Organization, Admin], // Register models here
+  models: [
+    OrgUser,
+    Organization,
+    Admin,
+    OrgBranch
+  ], // Register models here
   logging: false, // Set to console.log to see SQL queries
   pool: {
     max: 50,

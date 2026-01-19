@@ -15,7 +15,10 @@ export default class AdminRepository {
   ): Promise<void> {
     try {
       const admin = await Admin.findOne({
-        where: { email },
+        where: { 
+          email,
+          status: ['active', 'inactive']
+        },
         transaction,
       });
       
@@ -55,7 +58,13 @@ export default class AdminRepository {
     transaction?: Transaction
   ): Promise<Admin> {
     try {
-      const admin = await Admin.findByPk(super_u_id, { transaction });
+      const admin = await Admin.findOne({
+        where: { 
+          super_u_id,
+          status: ['active', 'inactive']
+        },
+        transaction
+      });
       
       if (!admin) {
         throw new RequestError('Admin not found', 40001, 404);
@@ -80,7 +89,10 @@ export default class AdminRepository {
   ): Promise<Admin> {
     try {
       const admin = await Admin.findOne({
-        where: { email },
+        where: { 
+          email,
+          status: ['active', 'inactive']
+        },
         transaction,
       });
       
@@ -103,7 +115,12 @@ export default class AdminRepository {
    */
   async getAllAdmins(transaction?: Transaction): Promise<Admin[]> {
     try {
-      const admins = await Admin.findAll({ transaction });
+      const admins = await Admin.findAll({ 
+        where: {
+          status: ['active', 'inactive']
+        },
+        transaction 
+      });
       return admins;
     } catch (e) {
       logger.error('Error getting all admins:', e);
@@ -133,7 +150,7 @@ export default class AdminRepository {
   }
 
   /**
-   * Delete admin
+   * Delete admin (soft delete)
    */
   async deleteAdmin(
     super_u_id: string,
@@ -141,7 +158,7 @@ export default class AdminRepository {
   ): Promise<void> {
     try {
       const admin = await this.getAdminById(super_u_id, transaction);
-      await admin.destroy({ transaction });
+      await admin.update({ status: 'deleted' }, { transaction });
     } catch (e) {
       if (e instanceof RequestError) {
         throw e;

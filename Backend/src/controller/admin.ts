@@ -14,6 +14,7 @@ const adminService = new AdminService();
 // Validation schemas
 const SCHEMA = {
   CREATE_ADMIN: z.object({
+    name: z.string().min(1),
     email: z.string().email(),
     password: z.string().min(6),
     type: z.string().optional(),
@@ -25,6 +26,7 @@ const SCHEMA = {
   }),
 
   UPDATE_ADMIN: z.object({
+    name: z.string().min(1).optional(),
     email: z.string().email().optional(),
     type: z.string().optional(),
   }),

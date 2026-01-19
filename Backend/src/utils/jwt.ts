@@ -6,7 +6,9 @@ export interface TokenData {
     id: number | string;
     is_admin?: boolean;
     org_id?: string;
+    branch_id?: string;
     type?: string;
+    designation?: 'Cashier' | 'Manager' | 'Admin' | 'Other';
     is_super_admin?: boolean;
 }
 

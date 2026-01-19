@@ -1,263 +1,287 @@
-import { useEffect, useState } from "react";
+
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import api from "@/utils/api";
 import { useAppSelector } from "@/redux/hooks";
 import { TRANSLATIONS } from "@/Admin/componets/organisations/constants";
-import type { Organization, OrganizationUser } from "@/Admin/componets/organisations/types";
-import DataTable from "react-data-table-component";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Building2, User, Globe, ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { getUploadUrl } from "@/utils/api";
+import OrganizationUsersList from "./OrganizationUsersList";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Building2, 
+  User, 
+  Globe, 
+  ArrowLeft, 
+  Loader2,
+  Edit,
+  MapPinned,
+  Hash,
+  UserCircle,
+  Smartphone,
+} from "lucide-react";
 
 export default function OrganizationView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { language, theme } = useAppSelector((state) => state.settings);
+  const { language } = useAppSelector((state) => state.settings);
   const t = TRANSLATIONS[language];
   const isRtl = language === 'ar';
-  const isDark = theme === 'dark';
 
-  const [org, setOrg] = useState<Organization | null>(null);
-  const [users, setUsers] = useState<OrganizationUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Fetch organization data using TanStack Query
+  const { data: orgData, isLoading: orgLoading } = useQuery({
+    queryKey: ['organization', id],
+    queryFn: async () => {
+      const response = await api.get(`/organization/${id}`);
+      return response.data.data.organization || response.data.data;
+    },
+    enabled: !!id,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Fetch Org and Users in parallel
-        const [orgRes, userRes] = await Promise.all([
-           api.get(`/organization/${id}`),
-           api.get(`/organization/${id}/users`)
-        ]);
-        
-        setOrg(Array.isArray(orgRes.data) ? orgRes.data[0] : orgRes.data);
-        setUsers(Array.isArray(userRes.data) ? userRes.data : []);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [id]);
+  // Fetch organization users using TanStack Query
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['organization-users', id],
+    queryFn: async () => {
+      const response = await api.get(`/organization/${id}/users`);
+      return Array.isArray(response.data.data.users) ? response.data.data.users : [];
+    },
+    enabled: !!id,
+  });
 
-  const handleDeleteUser = async (userId: string) => {
-    if(!confirm("Delete this user?")) return;
-    try {
-      await api.delete(`/organization/${id}/users/${userId}`);
-      setUsers(prev => prev.filter(u => (u.org_user_id || u.user_id) !== userId));
-    } catch(err) {
-      console.error(err);
-      alert("Failed to delete user");
-    }
-  };
+  const org = orgData || null;
+  const users = usersData || [];
+  const loading = orgLoading || usersLoading;
 
-  // User Table Columns
-  const userColumns = [
-    {
-      name: t.fields.logo,
-      cell: (row: any) => (
-         <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
-            {row.picture ? (
-              <img src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${row.picture}`} className="w-full h-full object-cover" />
-            ) : <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
-         </div>
-      ),
-      width: "60px",
-      center: true
-    },
-    {
-      name: t.fields.name_en, // Using generic name field
-      selector: (row: any) => row.name || row.username,
-      sortable: true
-    },
-    {
-      name: t.fields.email,
-      selector: (row: any) => row.email,
-      sortable: true
-    },
-    {
-      name: t.fields.type,
-      selector: (row: any) => row.type || "User",
-      sortable: true
-    },
-    {
-      name: t.fields.status,
-      cell: (row: any) => (
-        <Badge variant={row.status === 'active' ? 'default' : 'secondary'} className={row.status === 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400'}>
-          {row.status}
-        </Badge>
-      )
-    },
-    {
-      name: "",
-      cell: (row: any) => (
-        <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(row.org_user_id || row.user_id)} className="text-red-500 hover:text-red-600">
-           <Trash2 className="w-4 h-4" />
-        </Button>
-      ),
-      width: "80px"
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-zinc-950">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950"><Loader2 className="animate-spin w-8 h-8 text-pink-500" /></div>;
-  if (!org) return <div className="h-screen flex items-center justify-center text-gray-900 dark:text-white">Not Found</div>;
+  if (!org) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-zinc-950">
+        <Card className="dark:bg-zinc-900 dark:border-zinc-800">
+          <CardContent className="p-8 text-center">
+            <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Organization Not Found
+            </h3>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-zinc-950 min-h-screen" dir={isRtl ? "rtl" : "ltr"}>
-      
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organization")}>
-          <ArrowLeft className={`w-5 h-5 text-gray-600 dark:text-gray-400 ${isRtl ? 'rotate-180' : ''}`} />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-white">
-             {language === 'en' ? org.name_en : org.name_ar}
-             <Badge variant={org.status === 'active' ? 'default' : 'destructive'} className={org.status === 'active' ? 'bg-green-500' : ''}>
-               {org.status}
-             </Badge>
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">{org.type}</p>
-        </div>
-        <Button onClick={() => navigate(`/admin/organization/edit/${id}`)} variant="outline" className="bg-white dark:bg-zinc-900 dark:text-white dark:border-zinc-700">
-          {t.actions.edit}
-        </Button>
-      </div>
-
-      {/* Info Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Basic Info */}
-        <Card className="border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900">
-           <CardContent className="pt-6 flex flex-col items-center text-center">
-             <div className="w-24 h-24 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 flex items-center justify-center mb-4 overflow-hidden">
+    <div className={`min-h-screen bg-linear-to-br from-gray-50 via-blue-50/30 to-gray-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 ${isRtl ? 'rtl' : 'ltr'}`}>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <Button
+            onClick={() => navigate("/admin/organization")}
+            variant="ghost"
+            className="mb-4 hover:bg-white dark:hover:bg-zinc-800"
+            type="button"
+          >
+            <ArrowLeft className={`w-4 h-4 ${isRtl ? 'ml-2' : 'mr-2'}`} />
+            {t.actions.back || "Back"}
+          </Button>
+          
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
                 {org.picture ? (
-                   <img src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${org.picture}`} className="w-full h-full object-cover" />
-                ) : <Building2 className="w-8 h-8 text-gray-300 dark:text-gray-600" />}
-             </div>
-             <div className="w-full space-y-3 text-sm text-left">
-                <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                   <Mail className="w-4 h-4 text-gray-400 dark:text-gray-500" /> {org.email}
-                </div>
-                <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                   <Phone className="w-4 h-4 text-gray-400 dark:text-gray-500" /> {org.tel}
-                </div>
-                <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                   <Globe className="w-4 h-4 text-gray-400 dark:text-gray-500" /> {org.country}
-                </div>
-             </div>
-           </CardContent>
-        </Card>
-
-        {/* Location Info */}
-        <Card className="border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900">
-           <CardContent className="pt-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white"><MapPin className="w-4 h-4 text-pink-500" /> {t.fields.city}</h3>
-              <div className="space-y-3 text-sm">
-                 <div className="flex justify-between border-b border-gray-100 dark:border-zinc-800 pb-2">
-                    <span className="text-gray-500 dark:text-gray-400">{t.fields.state}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{org.state || "-"}</span>
-                 </div>
-                 <div className="flex justify-between border-b border-gray-100 dark:border-zinc-800 pb-2">
-                    <span className="text-gray-500 dark:text-gray-400">{t.fields.city}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{org.city}</span>
-                 </div>
-                 <div className="flex justify-between border-b border-gray-100 dark:border-zinc-800 pb-2">
-                    <span className="text-gray-500 dark:text-gray-400">{t.fields.pin}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{org.pin || "-"}</span>
-                 </div>
+                  <img 
+                    src={getUploadUrl(org.picture)} 
+                    alt={language === 'en' ? org.org_name_en : org.org_name_ar}
+                    className="w-16 h-16 rounded-xl object-cover"
+                  />
+                ) : (
+                  <Building2 className="w-8 h-8 text-white" />
+                )}
               </div>
-           </CardContent>
-        </Card>
-
-        {/* Contact Person Info */}
-        <Card className="border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900">
-           <CardContent className="pt-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white"><User className="w-4 h-4 text-pink-500" /> {t.fields.contact_person}</h3>
-              <div className="space-y-3 text-sm">
-                 <div className="font-medium text-lg text-gray-900 dark:text-white">{org.contact_person}</div>
-                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                    <Phone className="w-3 h-3" /> {org.c_mobile}
-                 </div>
-                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                    <Mail className="w-3 h-3" /> {org.c_email}
-                 </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {language === 'en' ? org.org_name_en : org.org_name_ar}
+                </h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge 
+                    variant={org.status === 'Active' ? 'default' : 'secondary'}
+                    className={org.status === 'Active' 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                    }
+                  >
+                    {org.status}
+                  </Badge>
+                  {org.type && (
+                    <Badge variant="outline" className="dark:border-zinc-700">
+                      <Building2 className={`w-3 h-3 ${isRtl ? 'ml-1' : 'mr-1'}`} />
+                      {org.type}
+                    </Badge>
+                  )}
+                </div>
               </div>
-           </CardContent>
-        </Card>
-      </div>
-
-      {/* Users Section (Directly embedded, no tabs) */}
-      <Card className="border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900">
-         <CardContent className="p-0">
-            <div className="p-4 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-900 rounded-t-lg">
-               <h3 className="font-semibold text-lg flex items-center gap-2 text-gray-900 dark:text-white">
-                  <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                  {t.titles.users}
-                  <Badge variant="secondary" className="ml-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300">{users.length}</Badge>
-               </h3>
-               {/* <Button size="sm" className="bg-gray-900 text-white hover:bg-gray-800">
-                  {t.actions.addUser}
-               </Button> */}
             </div>
             
-            <DataTable
-               columns={userColumns}
-               data={users}
-               pagination
-               highlightOnHover
-               customStyles={{
-                 table: {
-                   style: {
-                     backgroundColor: 'transparent',
-                   },
-                 },
-                 headRow: {
-                   style: {
-                     backgroundColor: isDark ? '#18181b' : '#f9fafb',
-                     borderBottom: isDark ? '1px solid #27272a' : '1px solid #e5e7eb',
-                     color: isDark ? '#f4f4f5' : '#111827',
-                   },
-                 },
-                 headCells: {
-                   style: {
-                     fontSize: '14px',
-                     fontWeight: '600',
-                     color: isDark ? '#a1a1aa' : '#6b7280',
-                   },
-                 },
-                 rows: {
-                   style: {
-                     fontSize: '14px',
-                     backgroundColor: isDark ? '#09090b' : '#ffffff',
-                     borderBottom: isDark ? '1px solid #27272a' : '1px solid #f3f4f6',
-                     color: isDark ? '#f4f4f5' : '#111827',
-                     '&:hover': {
-                       backgroundColor: isDark ? '#18181b' : '#f9fafb',
-                     },
-                   },
-                 },
-                 pagination: {
-                   style: {
-                     backgroundColor: isDark ? '#09090b' : '#ffffff',
-                     borderTop: isDark ? '1px solid #27272a' : '1px solid #e5e7eb',
-                     color: isDark ? '#f4f4f5' : '#111827',
-                   },
-                   pageButtonsStyle: {
-                     fill: isDark ? '#a1a1aa' : '#6b7280',
-                     '&:hover:not(:disabled)': {
-                       backgroundColor: isDark ? '#27272a' : '#f3f4f6',
-                     },
-                   },
-                 },
-               }}
-               noDataComponent={<div className="p-8 text-center text-gray-500 dark:text-gray-400">No users found for this organization.</div>}
-            />
-         </CardContent>
-      </Card>
+            <Button
+              onClick={() => navigate(`/admin/organization/edit/${id}`)}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+            >
+              <Edit className={`w-4 h-4 ${isRtl ? 'ml-2' : 'mr-2'}`} />
+              {t.actions.edit}
+            </Button>
+          </div>
+        </div>
+
+        {/* Info Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Basic Info */}
+          <Card className="dark:bg-zinc-900 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                {t.fields.basic_info || "Basic Information"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-100 dark:bg-zinc-800/50">
+                <Mail className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.email}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium break-all">{org.email}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-100 dark:bg-zinc-800/50">
+                <Phone className="w-5 h-5 text-green-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.tel || "Telephone"}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.tel || "-"}</p>
+                </div>
+              </div>
+              
+              {org.vat_no && (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-100 dark:bg-zinc-800/50">
+                  <Hash className="w-5 h-5 text-indigo-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.vat_no}</p>
+                    <p className="text-gray-900 dark:text-gray-100 font-medium">{org.vat_no}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-100 dark:bg-zinc-800/50">
+                <Globe className="w-5 h-5 text-purple-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.country}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.country || "-"}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-100 dark:bg-zinc-800/50">
+                <Globe className="w-5 h-5 text-teal-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.currency}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.currency}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-100 dark:bg-zinc-800/50">
+                <Globe className="w-5 h-5 text-orange-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.timezone}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.timezone}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Location Info */}
+          <Card className="dark:bg-zinc-900 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <MapPinned className="w-5 h-5 text-red-600" />
+                {t.fields.location || "Location Details"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-100 dark:bg-zinc-800/50">
+                <MapPin className="w-5 h-5 text-orange-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.state}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.state || "-"}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-100 dark:bg-zinc-800/50">
+                <Building2 className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.city}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.city}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-100 dark:bg-zinc-800/50">
+                <Hash className="w-5 h-5 text-teal-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.pin}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.pin || "-"}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Person Info - Full Width */}
+          <Card className="lg:col-span-2 dark:bg-zinc-900 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <User className="w-5 h-5 text-indigo-600" />
+                {t.fields.contact_person}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-200 dark:bg-zinc-800/50">
+                <UserCircle className="w-5 h-5 text-indigo-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.name_en || "Name"}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.contact_person}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-200 dark:bg-zinc-800/50">
+                <Smartphone className="w-5 h-5 text-green-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.mobile || "Mobile"}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">{org.c_mobile}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-200 dark:bg-zinc-800/50">
+                <Mail className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t.fields.email}</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium break-all">{org.c_email}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Users Section */}
+        <OrganizationUsersList
+          organizationId={id}
+          users={users}
+          isLoading={usersLoading}
+        />
+      </div>
     </div>
   );
 }

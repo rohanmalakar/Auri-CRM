@@ -10,12 +10,13 @@ import {
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 
+
 export interface OrganizationAttributes {
   org_id: string;
-  name_en: string;
-  name_ar: string;
+  org_name_en: string;
+  org_name_ar: string;
   email: string;
-  vat_no?: string;
+  vat_no?: number;
   tel?: string;
   country?: string;
   state?: string;
@@ -26,6 +27,8 @@ export interface OrganizationAttributes {
   c_email?: string;
   picture?: string;
   type?: string;
+  currency: string;
+  timezone: string;
   status: 'Active' | 'Inactive';
   creation_datetime: Date;
 }
@@ -47,13 +50,13 @@ export class Organization extends Model<OrganizationAttributes> {
     type: DataType.STRING,
     allowNull: false,
   })
-  name_en!: string;
+  org_name_en!: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  name_ar!: string;
+  org_name_ar!: string;
 
   @Column({
     type: DataType.STRING,
@@ -61,23 +64,12 @@ export class Organization extends Model<OrganizationAttributes> {
   })
   email!: string;
 
-  @Unique
   @Column({
-    type: DataType.STRING,
+    type: DataType.BIGINT,
     allowNull: true,
-    validate: {
-      len: {
-        args: [5, 30],
-        msg: 'VAT number must be between 5 and 30 characters'
-      },
-      isValidVat(value: string) {
-        if (value && value.length > 0 && (value.length < 5 || value.length > 30)) {
-          throw new Error('VAT number must be between 5 and 30 characters');
-        }
-      }
-    },
+    defaultValue: 0,
   })
-  vat_no?: string;
+  vat_no?: number;
 
   @Column({
     type: DataType.STRING,
@@ -138,6 +130,20 @@ export class Organization extends Model<OrganizationAttributes> {
     allowNull: true,
   })
   type?: string;
+
+  @Default('SAR')
+  @Column({
+    type: DataType.STRING(3),
+    allowNull: false,
+  })
+  currency!: string;
+
+  @Default('Asia/Riyadh')
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  timezone!: string;
 
   @Default('Active')
   @Column({

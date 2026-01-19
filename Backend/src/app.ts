@@ -3,17 +3,17 @@ import cors from 'cors';
 import morgan from 'morgan';
 import 'reflect-metadata';
 import dotenv from 'dotenv';
-import path from 'path';
 import { PORT } from '@utils/contants';
 import createLogger from '@utils/logger';
 import { errorHandler } from '@middleware/error';
 import orgUser from '@controller/orgUser';
 import organization from '@controller/organization';
 import admin from '@controller/admin';
+import branch from '@controller/branch';
 
-// import https from 'https';
-// import fs from 'fs';
-// import path from 'path';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
 import pool from '@utils/db';
 import sequelize from '@utils/sequelize';
@@ -53,7 +53,8 @@ async function start() {
 
   
   const allowedOrigins = [
-  'http://localhost:5183', 
+  'http://localhost:5183',
+  "http://192.168.29.2:5183"
 ];
 
 app.use(cors({
@@ -82,6 +83,8 @@ app.use(cors({
   app.use('/api/v1/orgUser', orgUser);
   app.use('/api/v1/organization', organization);
   app.use('/api/v1/admin', admin);
+  app.use('/api/v1/branch', branch);
+
 
   // Health check route
   app.get('/health', (req, res) => {
@@ -108,8 +111,8 @@ app.use(cors({
 
 
   //-------------------------------------Local Code---------------------------------//
-  app.listen(PORT, () => {
-    logger.info(`🚀 App is listening on port ${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    logger.info(`🚀 App is listening on port ${PORT} (accessible from all hosts)`);
   });
   // -------------------------------------Local Code End---------------------------------//
 

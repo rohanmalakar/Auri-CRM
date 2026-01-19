@@ -1,17 +1,20 @@
 // Organization Form Data Types
 export interface FormData {
-  name_en: string;
-  name_ar: string;
+  org_name_en: string;
+  org_name_ar: string;
   email: string;
-  tel: string;
-  country: string;
-  state: string;
-  city: string;
-  pin: string;
-  contact_person: string;
-  c_mobile: string;
-  c_email: string;
-  type: string;
+  vat_no?: string;
+  tel?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  pin?: string;
+  contact_person?: string;
+  c_mobile?: string;
+  c_email?: string;
+  type?: string;
+  currency: string;
+  timezone: string;
   status: string;
 }
 
@@ -50,6 +53,14 @@ export interface TranslationPlaceholders {
 
 // Translation Fields
 export interface TranslationFields {
+  basic_info: string;
+  location: string;
+  creation_date: string;
+  vat_no: string;
+  mobile: string;
+  tel: string;
+  org_name_en: string;
+  org_name_ar: string;
   name_en: string;
   name_ar: string;
   email: string;
@@ -62,6 +73,8 @@ export interface TranslationFields {
   contact_mobile: string;
   contact_email: string;
   type: string;
+  currency: string;
+  timezone: string;
   status: string;
   logo: string;
 }
@@ -76,6 +89,7 @@ export interface TranslationActions {
   edit: string;
   search: string;
   addUser: string;
+  back: string;
 }
 
 // Translation Validation
@@ -103,29 +117,32 @@ export interface Translations {
 // Organization Data (from API)
 export interface Organization {
   org_id: string;
-  name_en: string;
-  name_ar: string;
+  org_name_en: string;
+  org_name_ar: string;
   email: string;
-  vat_no?: string;
-  tel: string;
-  country: string;
-  state: string;
-  city: string;
-  pin: string;
-  contact_person: string;
-  c_mobile: string;
-  c_email: string;
-  type: string;
-  status: string;
-  picture?: string | null;
-  creation_datetime?: string;
+  vat_no?: number;
+  tel?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  pin?: string;
+  contact_person?: string;
+  c_mobile?: string;
+  c_email?: string;
+  password?: string;
+  picture?: string;
+  type?: string;
+  currency: string;
+  timezone: string;
+  status: 'Active' | 'Inactive';
+  creation_datetime: Date | string;
 }
 
 // API Response Types
 export interface OrganizationApiResponse {
   success: boolean;
   data: {
-    organization: Organization;
+    organizations: Organization[];
   };
 }
 

@@ -12,11 +12,16 @@ import {
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
+
+
 export interface AdminAttributes {
   super_u_id: string;
   email: string;
   password: string;
   type: string;
+  adminToken: string;
+  name: string;
+  status: 'active' | 'inactive' | 'deleted';
 }
 
 @Table({
@@ -39,6 +44,22 @@ export class Admin extends Model<AdminAttributes> {
   })
   email!: string;
 
+  @Unique
+  @Default(() => uuidv4())
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  adminToken!: string;
+
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    defaultValue: 'admin',
+  })
+  name!: string;
+
   @Column({
     type: DataType.STRING,
     allowNull: false,
@@ -51,6 +72,13 @@ export class Admin extends Model<AdminAttributes> {
     allowNull: false,
   })
   type!: string;
+
+  @Default('active')
+  @Column({
+    type: DataType.ENUM('active', 'inactive', 'deleted'),
+    allowNull: false,
+  })
+  status!: 'active' | 'inactive' | 'deleted';
 
   // Hooks for password hashing
   @BeforeCreate

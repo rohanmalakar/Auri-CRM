@@ -17,10 +17,11 @@ const ensureDirectoryExists = (dirPath: string) => {
 ensureDirectoryExists(uploadsBaseDir);
 ensureDirectoryExists(path.join(uploadsBaseDir, 'profile'));
 ensureDirectoryExists(path.join(uploadsBaseDir, 'organization'));
+ensureDirectoryExists(path.join(uploadsBaseDir, 'service'));
 
 // File filter for images only
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
   
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -46,6 +47,7 @@ const createUploadMiddleware = (subfolder: string) => {
     }
   });
 
+
   return multer({
     storage: storage,
     fileFilter: fileFilter,
@@ -58,3 +60,4 @@ const createUploadMiddleware = (subfolder: string) => {
 // Export upload middleware for different folders
 export const uploadProfile = createUploadMiddleware('profile');
 export const uploadOrganization = createUploadMiddleware('organization');
+

@@ -1,9 +1,11 @@
 import OrgUserRepository from '@repository/orgUser';
+import BranchRepository from '@repository/branch';
 import { OrgUser, OrgUserAttributes } from '@models/orgUser';
 import { ERRORS, RequestError } from '@utils/error';
 import createLogger from '@utils/logger';
 import sequelize from '@utils/sequelize';
 import { createAuthToken, createRefreshToken } from '@utils/jwt';
+import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLogger('@orgUserService');
 
@@ -12,16 +14,19 @@ export interface AuthOrgUser {
   name: string;
   email: string;
   org_id: string;
-  type: string;
+  designation?: 'Cashier' | 'Manager' | 'Admin' | 'Other';
   access_token: string;
+  branch_id?: string;
   refresh_token: string;
 }
 
 export class OrgUserService {
   orgUserRepository: OrgUserRepository;
+  branchRepository: BranchRepository;
 
   constructor() {
     this.orgUserRepository = new OrgUserRepository();
+    this.branchRepository = new BranchRepository();
   }
 
   /**
@@ -29,19 +34,37 @@ export class OrgUserService {
    */
   async createOrgUser(data: {
     org_id: string;
+    branch_id?: string;
     name: string;
     email: string;
     password: string;
     tel?: string;
+
     address?: string;
     picture?: string;
-    type: string;
-    app_access?: string;
-    designation?: number;
-    station_id?: number;
+    designation?: 'Cashier' | 'Manager' | 'Admin' | 'Other';
   }): Promise<OrgUser> {
     const transaction = await sequelize.transaction();
     try {
+      // Validate: Non-admin users must have branch_id
+      if (data.designation && data.designation !== 'Admin' && !data.branch_id) {
+        throw new RequestError('Branch ID is required for non-admin users', 30103, 400);
+      }
+
+      // Validate: If branch_id is provided, check if branch exists and is active
+      if (data.branch_id) {
+        const branch = await this.branchRepository.getBranchById(data.branch_id, transaction);
+        
+        if (branch.status !== 'Active') {
+          throw new RequestError('Branch must be active to assign users', 30104, 400);
+        }
+
+        // Verify branch belongs to the same organization
+        if (branch.org_id !== data.org_id) {
+          throw new RequestError('Branch does not belong to this organization', 30105, 400);
+        }
+      }
+
       // Check if user already exists
       await this.orgUserRepository.checkIfOrgUserExists(
         data.email,
@@ -49,9 +72,15 @@ export class OrgUserService {
         transaction
       );
 
+      // Generate unique org_user_id
+      const org_user_id = uuidv4();
+
       // Create org user
       const orgUser = await this.orgUserRepository.createOrgUser(
-        data,
+        {
+          ...data,
+          org_user_id,
+        },
         transaction
       );
 
@@ -90,12 +119,14 @@ export class OrgUserService {
       const accessToken = createAuthToken({
         id: orgUser.org_user_id,
         org_id: orgUser.org_id,
-        type: orgUser.type,
+        branch_id: orgUser.branch_id,
+        designation: orgUser.designation,
       });
       const refreshToken = createRefreshToken({
         id: orgUser.org_user_id,
         org_id: orgUser.org_id,
-        type: orgUser.type,
+        branch_id: orgUser.branch_id,
+        designation: orgUser.designation,
       });
 
       return {
@@ -103,7 +134,8 @@ export class OrgUserService {
         name: orgUser.name,
         email: orgUser.email,
         org_id: orgUser.org_id,
-        type: orgUser.type,
+        branch_id: orgUser.branch_id ,
+        designation: orgUser.designation,
         access_token: accessToken,
         refresh_token: refreshToken,
       };

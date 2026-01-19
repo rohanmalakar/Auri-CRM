@@ -6,9 +6,11 @@ import { Request } from '@customTypes/connection';
 import z from 'zod';
 import { successResponse } from '@utils/response';
 import { verifyToken, verifySuperAdmin } from '@middleware/auth';
-import { Organization } from '@models/organization';
+import { Organization } from '@models/organisation';
 import { OrgUser } from '@models/orgUser';
-import { uploadOrganization } from '@middleware/upload';
+import { uploadOrganization, uploadProfile } from '@middleware/upload';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 const organizationService = new OrganizationService();
@@ -17,27 +19,28 @@ const orgUserService = new OrgUserService();
 // Validation schemas
 const SCHEMA = {
   ADD_ORGANIZATION: z.object({
-    name_en: z.string().min(1),
-    name_ar: z.string().min(1),
+    org_name_en: z.string().min(1),
+    org_name_ar: z.string().min(1),
     email: z.string().email(),
-    vat_no: z.string().min(5).max(30).optional().or(z.literal('')),
+    vat_no: z.coerce.number().optional(),
     tel: z.string().optional(),
     country: z.string().optional(),
     state: z.string().optional(),
     city: z.string().optional(),
     pin: z.string().optional(),
-    contact_person: z.string().optional(),
-    c_mobile: z.string().optional(),
-    c_email: z.string().email().optional().or(z.literal('')),
+    contact_person: z.string().min(1),
+    c_mobile: z.string().min(1),
+    c_email: z.string().email(),
     picture: z.string().optional(),
     type: z.string().optional(),
+    password: z.string().min(4),
   }),
 
   UPDATE_ORGANIZATION: z.object({
-    name_en: z.string().min(1).optional(),
-    name_ar: z.string().min(1).optional(),
+    org_name_en: z.string().min(1).optional(),
+    org_name_ar: z.string().min(1).optional(),
     email: z.string().email().optional(),
-    vat_no: z.string().min(5).max(30).optional().or(z.literal('')),
+    vat_no: z.coerce.number().optional(),
     tel: z.string().optional(),
     country: z.string().optional(),
     state: z.string().optional(),
@@ -52,29 +55,25 @@ const SCHEMA = {
   }),
 
   ADD_ORGANIZATION_USER: z.object({
+    branch_id: z.string().optional(),
     name: z.string().min(1),
     email: z.string().email(),
     password: z.string().min(6),
     tel: z.string().optional(),
     address: z.string().optional(),
     picture: z.string().optional(),
-    type: z.string().min(1),
-    app_access: z.string().optional(),
-    designation: z.number().optional(),
-    station_id: z.number().optional(),
+    designation: z.enum(['Cashier', 'Manager', 'Admin', 'Other']).optional(),
   }),
 
   UPDATE_ORGANIZATION_USER: z.object({
+    branch_id: z.string().optional(),
     name: z.string().min(1).optional(),
     email: z.string().email().optional(),
     tel: z.string().optional(),
     address: z.string().optional(),
     picture: z.string().optional(),
-    type: z.string().min(1).optional(),
-    app_access: z.string().optional(),
-    designation: z.number().optional(),
-    station_id: z.number().optional(),
-    status: z.enum(['Active', 'Inactive']).optional(),
+    designation: z.enum(['Cashier', 'Manager', 'Admin', 'Other']).optional(),
+    status: z.enum(['Active', 'Inactive', 'Deleted']).optional(),
   }),
 };
 
@@ -96,9 +95,6 @@ router.post(
       if (req.file) {
         body.picture = `organization/${req.file.filename}`;
       }
-      // Remove empty strings for optional fields
-      if (body.vat_no === '') delete body.vat_no;
-      if (body.c_email === '') delete body.c_email;
       
       const organization = await organizationService.createOrganization(body);
       res.send(successResponse({ organization }));
@@ -158,10 +154,24 @@ router.put(
   async function (req: Request, res: Response, next: NextFunction) {
     const body: z.infer<typeof SCHEMA.UPDATE_ORGANIZATION> = req.body;
     try {
-      // If file was uploaded, add the file path to body
+      // If new file was uploaded, delete old picture and add new file path
       if (req.file) {
+        // Get existing organization to find old picture
+        const existingOrg = await organizationService.getOrganizationById(
+          req.params.org_id as string
+        );
+        
+        // Delete old picture if it exists
+        if (existingOrg.picture) {
+          const oldPicturePath = path.join(__dirname, '../../uploads', existingOrg.picture);
+          if (fs.existsSync(oldPicturePath)) {
+            fs.unlinkSync(oldPicturePath);
+          }
+        }
+        
         body.picture = `organization/${req.file.filename}`;
       }
+      
       const organization = await organizationService.updateOrganization(
         req.params.org_id as string,
         body
@@ -237,12 +247,18 @@ router.get(
 router.post(
   '/:org_id/users',
   verifyToken,
+  uploadProfile.single('picture'),
   validateRequest({
     body: SCHEMA.ADD_ORGANIZATION_USER,
   }),
   async function (req: Request, res: Response, next: NextFunction) {
     const body: z.infer<typeof SCHEMA.ADD_ORGANIZATION_USER> = req.body;
     try {
+      // If file was uploaded, add the file path to body
+      if (req.file) {
+        body.picture = `profile/${req.file.filename}`;
+      }
+      
       const user = await orgUserService.createOrgUser({
         ...body,
         org_id: req.params.org_id as string,
@@ -261,6 +277,7 @@ router.post(
 router.put(
   '/:org_id/users/:org_user_id',
   verifyToken,
+  uploadProfile.single('picture'),
   validateRequest({
     body: SCHEMA.UPDATE_ORGANIZATION_USER,
   }),
@@ -272,6 +289,24 @@ router.put(
         req.params.org_id as string,
         req.params.org_user_id as string
       );
+
+      // If new file was uploaded, delete old picture and add new file path
+      if (req.file) {
+        // Get existing user to find old picture
+        const existingUser = await orgUserService.getOrgUserById(
+          req.params.org_user_id as string
+        );
+        
+        // Delete old picture if it exists
+        if (existingUser.picture) {
+          const oldPicturePath = path.join(__dirname, '../../uploads', existingUser.picture);
+          if (fs.existsSync(oldPicturePath)) {
+            fs.unlinkSync(oldPicturePath);
+          }
+        }
+        
+        body.picture = `profile/${req.file.filename}`;
+      }
 
       const user = await orgUserService.updateOrgUser(
         req.params.org_user_id as string,

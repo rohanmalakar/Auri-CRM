@@ -49,9 +49,23 @@ const nav: NavItem[] = [
 ];
 
 export default function AdminAppLayout() {
-  const [open, setOpen] = useState<boolean>(true);
+  const [open, setOpen] = useState<boolean>(false); // Closed by default on mobile
   const sidebarRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
+
+  // Auto-open sidebar on desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setOpen(true);
+      } else {
+        setOpen(false);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Redux State
   const dispatch = useAppDispatch();
@@ -110,11 +124,12 @@ export default function AdminAppLayout() {
       {/* Sidebar */}
       <motion.aside
         ref={sidebarRef}
-        initial="expanded"
+        initial={false}
         animate={open ? "expanded" : "collapsed"}
         variants={sidebarVariants}
         transition={{ duration: 0.3, type: "spring", stiffness: 100, damping: 15 }}
-        className="fixed lg:sticky top-0 h-screen bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 shadow-sm z-20 flex flex-col overflow-hidden"
+        className={`fixed lg:sticky top-0 h-screen bg-[#F1F5F9] dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 shadow-lg lg:shadow-sm z-30 flex flex-col overflow-hidden ${!open && 'lg:flex hidden '}`}
+        style={{ left: open || window.innerWidth >= 1024 ? 0 : '-100%' }}
       >
         {/* Header / Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-zinc-800">
@@ -194,8 +209,18 @@ export default function AdminAppLayout() {
         
         {/* Top Header */}
         <header className="sticky top-0 z-10 h-16 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between px-4 sm:px-6 shadow-sm">
-          <div className="font-semibold text-lg text-gray-800 dark:text-zinc-100">
-            Welcome back 👋
+          <div className="flex items-center gap-3">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setOpen(!open)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-600 dark:text-zinc-400 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <MenuIcon size={20} />
+            </button>
+            <div className="font-semibold text-base sm:text-lg text-gray-800 dark:text-zinc-100">
+              Welcome back 👋
+            </div>
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3">
@@ -264,7 +289,7 @@ export default function AdminAppLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-x-hidden">
           <Outlet />
         </main>
       </div>
@@ -272,7 +297,7 @@ export default function AdminAppLayout() {
       {/* Overlay for mobile when sidebar is open */}
       {open && (
         <div 
-          className="fixed inset-0 bg-black/20 z-10 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/30 z-20 lg:hidden backdrop-blur-sm"
           onClick={() => setOpen(false)}
         />
       )}

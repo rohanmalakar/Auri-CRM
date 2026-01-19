@@ -1,4 +1,4 @@
-import { Organization, OrganizationAttributes } from '@models/organization';
+import { Organization, OrganizationAttributes } from '@models/organisation';
 import { ERRORS, RequestError } from '@utils/error';
 import createLogger from '@utils/logger';
 import { Transaction } from 'sequelize';
@@ -11,7 +11,7 @@ export default class OrganizationRepository {
    */
   async checkIfOrganizationExists(
     email: string,
-    vat_no?: string,
+    vat_no?: number,
     transaction?: Transaction
   ): Promise<void> {
     try {
