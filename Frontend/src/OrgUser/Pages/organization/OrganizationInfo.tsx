@@ -24,7 +24,6 @@ export default function OrganizationInfo() {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.orgAuth);
   const isOrgAdmin = user?.designation === 'Admin' || user?.designation === 'Manager';
-  const isCashier = user?.designation === 'Cashier';
   
   // Fetch organization data
   const { data: orgData, isLoading: orgLoading } = useQuery({

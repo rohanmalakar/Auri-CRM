@@ -96,7 +96,7 @@ export default function AnalyticsCharts({ stats, language, simpleView = false }:
                   outerRadius={100}
                   paddingAngle={4}
                   dataKey="value"
-                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                  label={({ percent = 0 }) => `${(percent * 100).toFixed(0)}%`}
                   labelLine={false}
                   animationBegin={0}
                   animationDuration={800}

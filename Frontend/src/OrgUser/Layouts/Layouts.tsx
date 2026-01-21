@@ -81,7 +81,7 @@ export default function OrgUserLayout() {
 
   // Check if user is admin or manager (not cashier)
   const isOrgAdmin = user?.designation === 'Admin' || user?.designation === 'Manager';
-  const isCashier = user?.designation === 'Cashier';
+  
 
   // Sync theme with document
   useEffect(() => {
@@ -181,13 +181,13 @@ export default function OrgUserLayout() {
         )} */}
 
         {/* Navigation Links */}
-        <nav className="flex-1 pl-2 pt-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {filteredNav.map((Item) => (
             <NavLink
               key={Item.to}
               to={Item.to}
               className={({ isActive }) =>
-                `relative group flex items-center gap-3 px-3 py-2.5 rounded-l-3xl text-sm transition-all duration-200 overflow-hidden whitespace-nowrap
+                `relative group flex items-center gap-3 px-3 py-2.5 rounded-3xl text-sm transition-all duration-200 overflow-hidden whitespace-nowrap
                 ${
                   isActive
                     ? "bg-white w-full text-blue-600 shadow-2xs dark:bg-blue-900/20 dark:text-blue-400 font-medium"

@@ -6,13 +6,8 @@ export interface OrgUserType {
   tel?: string;
   address?: string;
   picture?: string;
-  type: 'admin' | 'user';
   status?: 'Active' | 'Inactive';
-  app_access?: string;
-  designation?: number;
-  station_id?: number;
-  created_at?: string;
-  updated_at?: string;
+  designation?: 'Cashier' | 'Manager' | 'Admin' | 'Other';
 }
 
 export interface CreateOrgUserPayload {

@@ -68,10 +68,10 @@ export const permissions = {
   
   // Organization Management
   canEditOrganization: (user: OrgUser | null): boolean => isAdminOrManager(user),
-  canViewOrganization: (user: OrgUser | null): boolean => true, // All can view
+  canViewOrganization: (_user: OrgUser | null): boolean => true, // All can view
   
   // Reports
-  canViewReports: (user: OrgUser | null): boolean => true, // All can view
+  canViewReports: (_user: OrgUser | null): boolean => true, // All can view
   canExportReports: (user: OrgUser | null): boolean => isAdminOrManager(user),
   
   // Financial Operations

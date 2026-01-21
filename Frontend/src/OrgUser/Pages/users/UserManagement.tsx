@@ -26,6 +26,7 @@ import {
 import CreateUserDialog from "@/OrgUser/components/users/CreateUserDialog";
 import { USER_TRANSLATIONS } from "@/OrgUser/components/users/constants";
 import type { OrgUserType } from "@/OrgUser/components/users/types";
+import { getUploadUrl } from "@/utils/api";
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
@@ -104,7 +105,7 @@ export default function UserManagement() {
         <div className="flex items-center justify-center w-10 h-10">
           {row.picture ? (
             <img
-              src={row.picture}
+              src={getUploadUrl(row.picture)}
               alt={row.name}
               className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-zinc-700"
             />
@@ -165,6 +166,26 @@ export default function UserManagement() {
       ),
     },
     {
+      name: t.fields.designation,
+      selector: (row: OrgUserType) => row.designation || "-",
+      sortable: true,
+      cell: (row: OrgUserType) => (
+        <div className="text-gray-600 dark:text-gray-400">
+          {row.designation || "-"}
+        </div>
+      ),
+    },
+    {
+      name: t.fields.branch,
+      selector: (row: OrgUserType) => row.designation || "-",
+      sortable: true,
+      cell: (row: OrgUserType) => (
+        <div className="text-gray-600 dark:text-gray-400">
+          {row.designation  || "-"}
+        </div>
+      ),
+    },
+    {
       name: t.fields.actions,
       cell: (row: OrgUserType) => (
         <Button
@@ -174,7 +195,7 @@ export default function UserManagement() {
             setUserToDelete(row);
             setDeleteDialogOpen(true);
           }}
-          disabled={deleteUserMutation.isPending || row.type === 'admin'}
+          disabled={deleteUserMutation.isPending || row.designation === 'Admin'}
           className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
         >
           {deleteUserMutation.isPending && userToDelete?.org_user_id === row.org_user_id ? (
@@ -268,24 +289,7 @@ export default function UserManagement() {
     <div className="space-y-6" dir={isRtl ? 'rtl' : 'ltr'}>
       <Card className="bg-[#F1F5F9] border-transparent dark:bg-gray-900 dark:border-zinc-100 shadow-lg">
         <CardHeader>
-          <div className="flex justify-around flex-wrap gap-4 mt-4">
-            <div className=" p-5 rounded-lg mt-4 bg-white dark:bg-zinc-800 shadow-md flex flex-col  items-start w-48">
-               <span className="lg:text-4xl text-green-600 font-bold">{users.length}</span>
-               <span>{t.stats.totalUsers}</span>
-            </div>
-            <div className=" p-5 rounded-lg mt-4 bg-white dark:bg-zinc-800 shadow-md flex flex-col  items-start w-48">
-               <span className="lg:text-4xl text-red-600 font-bold">{users.filter(user => user.status === "Active").length}</span>
-               <span>{t.stats.activeUsers}</span>
-            </div>
-            <div className=" p-5 rounded-lg mt-4 bg-white dark:bg-zinc-800 shadow-md flex flex-col  items-start  w-48">
-               <span className="lg:text-4xl text-green-600 font-bold">{2000 }</span>
-               <span>{t.stats.totalSpending}</span>
-            </div>
-            <div className=" p-5 rounded-lg mt-4 bg-white dark:bg-zinc-800 shadow-md flex flex-col  items-start w-48">
-               <span className="lg:text-4xl text-green-600 font-bold">{7000}</span>
-               <span>{t.stats.totalPoints}</span>
-            </div>
-          </div>
+          
           <div className="flex gap-6 mt-4 items-center">
           {/* Search Bar */}
             <div className=" relative w-full sm:w-64">

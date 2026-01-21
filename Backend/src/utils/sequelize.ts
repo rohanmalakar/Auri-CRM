@@ -4,7 +4,16 @@ import { OrgUser } from '@models/orgUser';
 import { Organization } from '@models/organisation';
 import { Admin } from '@models/admin';
 import { OrgBranch } from '@models/branch';
-
+import { LoyaltyProgram } from '@models/loyalty/loyaltyProgram';
+import { PointsProgramRule } from '@models/loyalty/pointsProgramRule';
+import { StampsProgramRule } from '@models/loyalty/stampsProgramRule';
+import { PointsWalletDesign } from '@models/loyalty/pointsWalletDesign';
+import { StampsWalletDesign } from '@models/loyalty/stampsWalletDesign';
+import { StampsAccrualProduct } from '@models/loyalty/stampsAccrualProduct';
+import { LoyaltyReward } from '@models/loyalty/loyaltyReward';
+import { RewardCost } from '@models/rewardCost';
+import { RewardDiscountRule } from '@models/loyalty/rewardDiscountRule';
+import { RewardFreeProduct } from '@models/loyalty/rewardFreeProduct';
 
 // Create Sequelize instance
 const sequelize = new Sequelize({
@@ -18,7 +27,17 @@ const sequelize = new Sequelize({
     OrgUser,
     Organization,
     Admin,
-    OrgBranch
+    OrgBranch,
+    LoyaltyProgram,
+    PointsProgramRule,
+    StampsProgramRule,
+    PointsWalletDesign,
+    StampsWalletDesign,
+    StampsAccrualProduct,
+    LoyaltyReward,
+    RewardCost,
+    RewardDiscountRule,
+    RewardFreeProduct,
   ], // Register models here
   logging: false, // Set to console.log to see SQL queries
   pool: {

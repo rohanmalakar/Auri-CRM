@@ -10,6 +10,7 @@ import orgUser from '@controller/orgUser';
 import organization from '@controller/organization';
 import admin from '@controller/admin';
 import branch from '@controller/branch';
+import loyaltyProgram from '@controller/loyaltyProgram';
 
 import https from 'https';
 import fs from 'fs';
@@ -84,6 +85,7 @@ app.use(cors({
   app.use('/api/v1/organization', organization);
   app.use('/api/v1/admin', admin);
   app.use('/api/v1/branch', branch);
+  app.use('/api/v1/loyalty/programs', loyaltyProgram);
 
 
   // Health check route

@@ -81,8 +81,6 @@ export default function OrgUserDashboard() {
   const [selectedMonth, setSelectedMonth] = useState("jun");
   const { user } = useAppSelector((state) => state.orgAuth);
 
-  const isOrgAdmin = user?.designation === 'Admin' || user?.designation === 'Manager';
-  const isCashier = user?.designation === 'Cashier';
   const t = translations[language];
   const isRTL = language === "ar";
 

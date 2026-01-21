@@ -3,7 +3,7 @@ export interface FormData {
   org_name_en: string;
   org_name_ar: string;
   email: string;
-  vat_no?: string;
+  vat_no?: string | number;
   tel?: string;
   country?: string;
   state?: string;

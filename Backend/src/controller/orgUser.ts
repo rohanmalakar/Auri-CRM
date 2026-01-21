@@ -25,7 +25,6 @@ const SCHEMA = {
     password: z.string().min(6),
     tel: z.string().optional(),
     address: z.string().optional(),
-    picture: z.string().optional(),
     designation: z.enum(['Cashier', 'Manager', 'Admin', 'Other']).optional(),
   }),
 
@@ -79,12 +78,12 @@ const SCHEMA = {
 router.post(
   '/create',
   verifyToken,
+  uploadProfile.single('picture'),
   validateRequest({
     body: SCHEMA.CREATE_ORG_USER,
   }),
-  uploadProfile.single('picture'),
   async function (req: Request, res: Response, next: NextFunction) {
-    const body: z.infer<typeof SCHEMA.CREATE_ORG_USER> = req.body;
+    const body: z.infer<typeof SCHEMA.CREATE_ORG_USER> & { picture?: string } = req.body;
     try {
       // If file was uploaded, add the file path to body
       if (req.file) {
