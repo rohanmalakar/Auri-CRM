@@ -3,8 +3,6 @@ import axios from 'axios';
 let backendURL = import.meta.env.VITE_BACKEND_URL;
 
 
-console.log("backend url",backendURL);
-
 const api = axios.create({
   baseURL: `${backendURL}/api/v1`, // make sure /api is appended
   headers: {

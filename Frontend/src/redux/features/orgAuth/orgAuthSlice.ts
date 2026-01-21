@@ -61,7 +61,7 @@ const orgAuthSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.error = null;
-      localStorage.setItem('orgToken', action.payload.token);
+      localStorage.setItem('token', action.payload.token);
       localStorage.setItem('orgUser', JSON.stringify(action.payload.user));
     },
     orgLoginFailure: (state: OrgAuthState, action: PayloadAction<string>) => {

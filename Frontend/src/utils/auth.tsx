@@ -6,6 +6,6 @@ export const logout = () => {
 
 // Admin logout
 export const adminLogout = () => {
-  localStorage.removeItem("adminToken");
+  localStorage.removeItem("token");
   window.location.href = "/admin/login"; // force redirect
 };

@@ -3,6 +3,8 @@ import { LoyaltyProgram } from '@models/loyalty/loyaltyProgram';
 import { ERRORS, RequestError } from '@utils/error';
 import createLogger from '@utils/logger';
 import sequelize from '@utils/sequelize';
+import { Transaction } from 'sequelize/types/transaction';
+import { Op } from 'sequelize/types/operators';
 
 const logger = createLogger('@loyaltyProgramService');
 
@@ -280,7 +282,6 @@ export class LoyaltyProgramService {
       // Step 6: Fetch and return full program with includes
       const createdProgram = await this.repository.findByIdWithIncludes(
         program.program_id,
-        orgId
       );
 
       if (!createdProgram) {
@@ -298,6 +299,79 @@ export class LoyaltyProgramService {
       throw ERRORS.DATABASE_ERROR;
     }
   }
+
+  /**
+   * Get paginated programs for an organization
+   * @param org_id - passed from req.user.org_id in the controller
+   * @param page - query param
+   * @param limit - query param
+   */
+  async getProgramsByOrgId(
+    org_id: string, 
+    page: number = 1, 
+    limit: number = 10
+  ): Promise<{ 
+    programs: LoyaltyProgram[]; 
+    meta: { 
+      total: number; 
+      page: number; 
+      limit: number; 
+      totalPages: number 
+    } 
+  }> {
+    try {
+      // Optional: Verify organization still exists in DB
+      // const orgExists = await this.repository.checkOrganizationExists(org_id);
+      // if (!orgExists) {
+      //   throw new RequestError('Organization not found', 40401, 404);
+      // }
+      
+
+      const offset = (page - 1) * limit;
+
+      const { rows, count } = await this.repository.getProgramsByOrgId(
+        org_id,
+        { limit, offset }
+      );
+
+      return {
+        programs: rows,
+        meta: {
+          total: count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      };
+    } catch (e) {
+      if (e instanceof RequestError) throw e;
+      logger.error('Error getting loyalty programs:', e);
+      throw ERRORS.INTERNAL_SERVER_ERROR;
+    }
+  }
+
+  /**
+   * Get program by ID
+   */
+  /**
+   * Get specific program
+   */
+  async getProgramById(program_id: string): Promise<LoyaltyProgram> {
+    try {
+      const program = await this.repository.findByIdWithIncludes(program_id);
+      if (!program) {
+        throw new RequestError('Loyalty program not found', 40401, 404);
+      }
+      return program;
+    } catch (e) {
+      if (e instanceof RequestError) throw e;
+      logger.error('Error getting program by ID:', e);
+      throw ERRORS.INTERNAL_SERVER_ERROR;
+    }
+  }
+ 
+
+
 
   /**
    * Business validation

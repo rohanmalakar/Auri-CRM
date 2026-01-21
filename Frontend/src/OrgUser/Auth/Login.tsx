@@ -74,7 +74,7 @@ export default function OrgUserLogin() {
       };
       
       // Store refresh token in localStorage
-      localStorage.setItem('orgRefreshToken', refresh_token);
+      localStorage.setItem('token', refresh_token);
       
       // Dispatch success with user data and access token
       dispatch(orgLoginSuccess({

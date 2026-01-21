@@ -23,14 +23,14 @@ dotenv.config();
 const logger = createLogger('@app');
 
 // Global crash/error catchers
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection:', reason);
-});
+// process.on('unhandledRejection', (reason, promise) => {
+//   console.error('Unhandled Rejection:', reason);
+// });
 
-process.on('uncaughtException', err => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
-});
+// process.on('uncaughtException', err => {
+//   console.error('Uncaught Exception:', err);
+//   process.exit(1);
+// });
 
 async function start() {
   const app: Application = express();
@@ -74,7 +74,7 @@ app.use(cors({
   // Sync Sequelize models
   try {
     await sequelize.sync({ alter: false }); // Use { force: true } to drop tables or { alter: true } to update schema
-    console.log('✅ Sequelize models synced successfully');
+    console.log('✅ Sequelize models synced ');
   } catch (err) {
     console.error('❌ Failed to sync Sequelize models:', err);
   }
@@ -143,7 +143,8 @@ app.use(cors({
 }
 
 // Start with top-level error handling
-start().catch((err) => {
+start()
+.catch((err) => {
   console.error('❌ Fatal error during app startup:', err);
   process.exit(1);
 });

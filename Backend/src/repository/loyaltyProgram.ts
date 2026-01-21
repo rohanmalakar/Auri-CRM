@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { LoyaltyProgram } from '@models/loyalty/loyaltyProgram';
 import { PointsProgramRule } from '@models/loyalty/pointsProgramRule';
 import { StampsProgramRule } from '@models/loyalty/stampsProgramRule';
@@ -11,6 +11,17 @@ import { RewardDiscountRule } from '@models/loyalty/rewardDiscountRule';
 import { RewardFreeProduct } from '@models/loyalty/rewardFreeProduct';
 import { ERRORS } from '@utils/error';
 import createLogger from '@utils/logger';
+import OrganizationRepository from '@repository/organization';
+
+export interface PaginationOptions {
+  limit: number;
+  offset: number;
+}
+
+export interface PaginatedResult<T> {
+  rows: T[];
+  count: number;
+}
 
 const logger = createLogger('@loyaltyProgramRepository');
 
@@ -257,13 +268,11 @@ export default class LoyaltyProgramRepository {
    */
   async findByIdWithIncludes(
     programId: string,
-    orgId: string
   ): Promise<LoyaltyProgram | null> {
     try {
       const program = await LoyaltyProgram.findOne({
         where: {
-          program_id: programId,
-          org_id: orgId,
+          program_id: programId
         },
         include: [
           {
@@ -312,4 +321,30 @@ export default class LoyaltyProgramRepository {
       throw ERRORS.DATABASE_ERROR;
     }
   }
+
+  // find all the programs for an organization with pagination
+  async getProgramsByOrgId(
+    org_id: string,
+    pagination: PaginationOptions,
+    transaction?: Transaction
+  ): Promise<PaginatedResult<LoyaltyProgram>> {
+    try {
+      const { limit, offset } = pagination;
+      
+      return await LoyaltyProgram.findAndCountAll({
+        where: {
+          org_id,
+          status: { [Op.ne]: 'INACTIVE' },
+        },
+        limit,
+        offset,
+        order: [['created_at', 'DESC']],
+        transaction,
+      });
+    } catch (e) {
+      logger.error('Error getting loyalty programs:', e);
+      throw ERRORS.DATABASE_ERROR;
+    }
+  }
+
 }

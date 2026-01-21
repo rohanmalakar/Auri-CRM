@@ -45,7 +45,7 @@ export const ERRORS = {
     NOT_FOUND: new RequestError("Resource not found", 10000, 404),
     DATABASE_ERROR: new RequestError("DATABASE ERROR", 10001, 500),
     INVALID_REQUEST_BODY: new RequestError("invalid request body", 10002, 400),
-    INVALID_INPUT: new RequestError("Invalid input data", 10003, 400),
+    INVALID_INPUT: new RequestError("Invalid data", 10003, 400),
     INVALID_QUERY_PARAMETER: new RequestError("invalid query body", 10004, 400),
     AUTH_NO_TOKEN_FOUND: new RequestError("No token found", 10005, 401),
     AUTH_UNAUTHERISED: new RequestError("UNAUTHERISED", 10006, 401),

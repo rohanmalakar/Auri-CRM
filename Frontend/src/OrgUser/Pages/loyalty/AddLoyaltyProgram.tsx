@@ -7,6 +7,8 @@ import { WalletDesignForm } from "@/OrgUser/components/loyalty/WalletDesignForm"
 import { RewardsForm } from "@/OrgUser/components/loyalty/RewardsForm";
 import { loyaltyProgramFormSchema } from "@/OrgUser/components/loyalty/loyaltySchema";
 import { Plus } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import api from "@/utils/api";
 
 // Default Values
 const defaultValues: any = {
@@ -36,7 +38,7 @@ const defaultValues: any = {
   unfulfilled_stamp_icon_key: "GIFT",
   unfulfilled_stamp_color: "#e4e4e7",
   rewards: [
-    { 
+    {
       voucher_name_en: "",
       voucher_name_ar: "",
       reward_type: "DISCOUNT",
@@ -75,103 +77,139 @@ export default function AddLoyaltyProgram() {
 
   const programType = watch("program_type");
 
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+
+      const response = await api.post(`/loyalty/programs`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      alert("Loyalty program created successfully");
+    },
+    onError: (error: any) => {
+      const errorMsg = error.response?.data?.message || error.response?.data?.errors?.[0]?.message || "Error creating loyalty program";
+      alert(errorMsg);
+    }
+  });
+
+
   const onSubmit = (data: any) => {
-     const formdata=new FormData(); 
+    // Helper: Convert string numbers to actual numbers
+    const toNumber = (value: any) => {
+      if (value === null || value === undefined || value === '') return undefined;
+      const num = Number(value);
+      return isNaN(num) ? value : num;
+    };
 
-     formdata.append("programType",data.program_type);
-     formdata.append("nameEn",data.name_en);
-     formdata.append("nameAr",data.name_ar);
-     if(data.description_en)formdata.append("descriptionEn",data.description_en);
-     if(data.description_ar)formdata.append("descriptionAr",data.description_ar);
-     if(data.termsEn)formdata.append("termsEn",data.termsEn);
-     if(data.termsAr)formdata.append("termsAr",data.termsAr);
-     if(data.howToUseEn)formdata.append("howToUseEn",data.howToUseEn);
-     if(data.howToUseAr)formdata.append("howToUseAr",data.howToUseAr);
-     
-     // Transform rewards data
-     const transformedRewards = data.rewards.map((reward: any) => {
-       const transformedReward: any = {
-         voucherNameEn: reward.voucher_name_en,
-         voucherNameAr: reward.voucher_name_ar,
-         rewardType: reward.reward_type,
-       };
-       
-       if (reward.voucher_description_en) {
-         transformedReward.voucherDescriptionEn = reward.voucher_description_en;
-       }
-       if (reward.voucher_description_ar) {
-         transformedReward.voucherDescriptionAr = reward.voucher_description_ar;
-       }
-       
-       if (reward.reward_type === "DISCOUNT") {
-         transformedReward.discount = {
-           discountPercentage: reward.discount?.discount_percentage,
-           currencyCode: reward.discount?.currency_code,
-           maxDiscountAmount: reward.discount?.max_discount_amount,
-         };
-       } else if (reward.reward_type === "FREE_PRODUCT") {
-         transformedReward.freeProducts = reward.free_products;
-       }
-       
-       if (data.program_type === "STAMPS") {
-         transformedReward.costStamps = data.stamps_target;
-       } else if (data.program_type === "POINTS") {
-         transformedReward.costPoints = reward.cost_points;
-       }
-       
-       return transformedReward;
-     });
-     
-     formdata.append("rewards", JSON.stringify(transformedRewards));
-     
-     if(data.program_type==="STAMPS"){
-        const stampsRules={
-           stampsTarget: data.stamps_target,
-           accrualRule: data.accrual_rule,
-           timeRestrictionUnit: data.time_restriction_unit,
-           timeRestrictionValue: data.time_restriction_value,
-           visitLimitMode: data?.visit_limit_mode || "NO_LIMIT",
-           maxPerWindow: data?.max_per_window || 0,
-           limitScope: data?.limit_scope || "PER_CUSTOMER"
-        }
-        const stampsWalletDesign={
-            cardColor: data.card_color,
-            cardTitleColor: data.card_title_color,
-            cardTextColor: data.card_text_color,
-            stripImageUrl: data.strip_image_url?.[0] || null,
-            fulfilledStampIconKey: data.fulfilled_stamp_icon_key,
-            fulfilledStampColor: data.fulfilled_stamp_color,
-            unfulfilledStampIconKey: data.unfulfilled_stamp_icon_key,
-            unfulfilledStampColor: data.unfulfilled_stamp_color
-        }
-        formdata.append("stampsWalletDesign",JSON.stringify( stampsWalletDesign));
-        formdata.append("stampsRules",JSON.stringify( stampsRules));
-     }
-     if(data.program_type==="POINTS"){
-       const pointsRules={
-          currencyCode: data.point_value_currency,
-          earnPointsPerCurrency: data.earn_points_per_currency,
-          pointTaxPercent: data.point_tax_percent,
-          minSpendToEarn: data.min_spend_to_earn,
-          expiryDurationValue: data.expiry_duration_value,
-          expiryDurationUnit: data.expiry_duration_unit,
-          roundingMode: data?.rounding_mode || "ROUND"
-       }
-      const pointsWalletDesign={
-          cardColor: data.card_color,
-          cardTitleColor: data.card_title_color,
-          cardTextColor: data.card_text_color,
-          stripImageUrl: data.strip_image_url?.[0] || null,
+    // 1. Construct the Main Payload Object (Clean Data)
+    const payload: any = {
+      programType: data.program_type,
+      nameEn: data.name_en,
+      nameAr: data.name_ar,
+    };
+
+    // Optional fields
+    if (data.description_en) payload.descriptionEn = data.description_en;
+    if (data.description_ar) payload.descriptionAr = data.description_ar;
+    if (data.termsEn) payload.termsEn = data.termsEn;
+    if (data.termsAr) payload.termsAr = data.termsAr;
+    if (data.howToUseEn) payload.howToUseEn = data.howToUseEn;
+    if (data.howToUseAr) payload.howToUseAr = data.howToUseAr;
+
+    // 2. Transform Rewards
+    payload.rewards = data.rewards.map((reward: any) => {
+      const transformedReward: any = {
+        voucherNameEn: reward.voucher_name_en,
+        voucherNameAr: reward.voucher_name_ar,
+        rewardType: reward.reward_type,
+      };
+
+      if (reward.voucher_description_en)
+        transformedReward.voucherDescriptionEn = reward.voucher_description_en;
+      if (reward.voucher_description_ar)
+        transformedReward.voucherDescriptionAr = reward.voucher_description_ar;
+
+      if (reward.reward_type === "DISCOUNT") {
+        transformedReward.discount = {
+          discountPercentage: toNumber(reward.discount?.discount_percentage),
+          currencyCode: reward.discount?.currency_code,
+          maxDiscountAmount: toNumber(reward.discount?.max_discount_amount),
+        };
+      } else if (reward.reward_type === "FREE_PRODUCT") {
+        transformedReward.freeProducts = reward.free_products?.map(
+          (product: any) => ({
+            productSource: product.product_source,
+            internalProductId: toNumber(product.internal_product_id),
+            externalProductId: product.external_product_id,
+            qtyFree: toNumber(product.qty_free),
+          })
+        );
       }
-      formdata.append("pointsWalletDesign",JSON.stringify( pointsWalletDesign));
-      formdata.append("pointsRules",JSON.stringify( pointsRules));
-     }
-     formdata.forEach((value, key) => {
-       console.log(`${key}:`, value)
-     });
 
-     
-     
+      // Assign Costs
+      if (data.program_type === "STAMPS") {
+        transformedReward.costStamps = toNumber(data.stamps_target);
+      } else if (data.program_type === "POINTS") {
+        transformedReward.costPoints = toNumber(reward.cost_points);
+      }
+
+      return transformedReward;
+    });
+
+    // 3. Transform Rules & Wallet Design based on Type
+    if (data.program_type === "STAMPS") {
+      payload.stampsRules = {
+        stampsTarget: toNumber(data.stamps_target),
+        accrualRule: data.accrual_rule,
+        timeRestrictionUnit: data.time_restriction_unit,
+        timeRestrictionValue: toNumber(data.time_restriction_value),
+        visitLimitMode: data?.visit_limit_mode || "UNLIMITED",
+        limitScope: data?.limit_scope || "ORG",
+      };
+
+      // Only include maxPerWindow if it's a positive number
+      const maxPerWindow = toNumber(data?.max_per_window);
+      if (maxPerWindow && maxPerWindow > 0) {
+        payload.stampsRules.maxPerWindow = maxPerWindow;
+      }
+      payload.stampsWalletDesign = {
+        cardColor: data.card_color,
+        cardTitleColor: data.card_title_color,
+        cardTextColor: data.card_text_color,
+        stripImageUrl: data.strip_image_url?.[0] || undefined, // Handles File object
+        fulfilledStampIconKey: data.fulfilled_stamp_icon_key,
+        fulfilledStampColor: data.fulfilled_stamp_color,
+        unfulfilledStampIconKey: data.unfulfilled_stamp_icon_key,
+        unfulfilledStampColor: data.unfulfilled_stamp_color,
+      };
+    } else if (data.program_type === "POINTS") {
+      const earnPointsPerCurrency = toNumber(data.earn_points_per_currency) || 1;
+      const pointValueCurrency = earnPointsPerCurrency > 0 ? (1 / earnPointsPerCurrency) : 0.01;
+
+      payload.pointsRules = {
+        currencyCode: data.point_value_currency,
+        earnPointsPerCurrency: earnPointsPerCurrency,
+        pointValueCurrency: pointValueCurrency, // Auto-calculated inverse
+        pointTaxPercent: toNumber(data.point_tax_percent) || 0,
+        minSpendToEarn: toNumber(data.min_spend_to_earn) || 0,
+        expiryDurationValue: toNumber(data.expiry_duration_value),
+        expiryDurationUnit: data.expiry_duration_unit,
+        roundingMode: data?.rounding_mode || "ROUND",
+      };
+      payload.pointsWalletDesign = {
+        cardColor: data.card_color,
+        cardTitleColor: data.card_title_color,
+        cardTextColor: data.card_text_color,
+        stripImageUrl: data.strip_image_url?.[0] || undefined, // Handles File object
+      };
+    }
+
+    // Debugging
+    console.log('\n🚀 ========== SENDING TO API ==========');
+    console.log('Final payload:', JSON.stringify(payload, null, 2));
+    console.log('======================================\n');
+
+    updateMutation.mutate(payload);
   };
 
   return (
@@ -186,55 +224,55 @@ export default function AddLoyaltyProgram() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          
+
           {/* 1. Program Type */}
-            <ProgramTypeSelector watch={watch as any} setValue={setValue as any} />
+          <ProgramTypeSelector watch={watch as any} setValue={setValue as any} />
 
           {/* 2. Basic Info */}
-            <BasicInfoForm register={register as any} errors={errors} />
+          <BasicInfoForm register={register as any} errors={errors} />
 
           {/* 3. Rules (Conditional) */}
-            <RulesForm register={register as any} watch={watch as any} errors={errors} />
+          <RulesForm register={register as any} watch={watch as any} errors={errors} />
 
           {/* 4. Wallet Design */}
-            <WalletDesignForm register={register as any} watch={watch as any} />
+          <WalletDesignForm register={register as any} watch={watch as any} />
 
           {/* 5. Rewards */}
           <div className="space-y-4">
-             {fields.map((field: any, index: number) => (
-               <RewardsForm 
-                 key={field.id} 
-                   register={register as any} 
-                   watch={watch as any}
-                   setValue={setValue as any}
-                 index={index}
-                 errors={errors}
-                 onRemove={() => remove(index)}
-                 canDelete={programType === "POINTS" && fields.length > 1}
-               />
-             ))}
-             
-             {programType === "POINTS" && (
-               <button
-                 type="button"
-                 onClick={() => append({ 
-                   voucher_name_en: "",
-                   voucher_name_ar: "",
-                   reward_type: "DISCOUNT",
+            {fields.map((field: any, index: number) => (
+              <RewardsForm
+                key={field.id}
+                register={register as any}
+                watch={watch as any}
+                setValue={setValue as any}
+                index={index}
+                errors={errors}
+                onRemove={() => remove(index)}
+                canDelete={programType === "POINTS" && fields.length > 1}
+              />
+            ))}
+
+            {programType === "POINTS" && (
+              <button
+                type="button"
+                onClick={() => append({
+                  voucher_name_en: "",
+                  voucher_name_ar: "",
+                  reward_type: "DISCOUNT",
                   cost_points: undefined,
-                    cost_stamps: undefined,
-                   discount: {
-                     discount_percentage: 0,
-                     currency_code: "SAR",
-                     max_discount_amount: 0,
-                   },
-                   free_products: []
-                 })}
-                 className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-zinc-700 text-gray-500 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 font-medium"
-               >
-                 <Plus size={20} /> Add more rewards
-               </button>
-             )}
+                  cost_stamps: undefined,
+                  discount: {
+                    discount_percentage: 0,
+                    currency_code: "SAR",
+                    max_discount_amount: 0,
+                  },
+                  free_products: []
+                })}
+                className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-zinc-700 text-gray-500 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 font-medium"
+              >
+                <Plus size={20} /> Add more rewards
+              </button>
+            )}
           </div>
 
           {/* 6. Terms & How-To-Use */}
@@ -286,7 +324,7 @@ export default function AddLoyaltyProgram() {
               {isSubmitting ? "Creating..." : "Create Program"}
             </button>
           </div>
-          
+
           {/* Debugging */}
           {Object.keys(errors).length > 0 && (
             <div className="mt-6 p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800">

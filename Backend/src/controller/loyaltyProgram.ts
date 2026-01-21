@@ -104,6 +104,10 @@ const SCHEMA = {
     stampsAccrualProducts: z.array(stampsAccrualProductSchema).optional(),
     rewards: z.array(rewardInputSchema).min(1),
   }),
+  PAGINATION: z.object({
+    page: z.string().regex(/^\d+$/).transform(Number).optional(),
+    limit: z.string().regex(/^\d+$/).transform(Number).optional()
+  })
 };
 
 /**
@@ -117,9 +121,12 @@ router.post(
     body: SCHEMA.CREATE_FULL_PROGRAM,
   }),
   async function (req: Request, res: Response, next: NextFunction) {
+    console.log(req.body);
+
     const body: z.infer<typeof SCHEMA.CREATE_FULL_PROGRAM> = req.body;
     try {
       if (!req.user?.org_id) {
+        console.log(req.user);
         return res.status(401).json({ error: 'Organization ID not found in token' });
       }
 
@@ -136,5 +143,61 @@ router.post(
     }
   }
 );
+
+/** GET /api/loyalty/programs/all
+ * Get all loyalty programs for the organization with pagination
+ */
+
+
+router.get(
+  '/all/:org_id',
+  validateRequest({
+    query: SCHEMA.PAGINATION
+  }),
+  async function (req: Request, res: Response, next: NextFunction) {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      // Extract org_id from the authenticated user
+      // Ensure your Request type definition includes the 'user' object
+      if (!req.params.org_id) {
+        return res.status(401).json({ error: 'Organization ID not found in token' });
+      }
+
+      const result = await loyaltyProgramService.getProgramsByOrgId(
+        req.params.org_id as string,
+        page,
+        limit
+      );
+      
+      res.send(successResponse(result));
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+/**
+ * Get a specific Loyalty Program by ID
+ * GET /loyalty-program/detail/:program_id
+ */
+router.get(
+  '/detail/:program_id',
+  verifyToken,
+  async function (req: Request, res: Response, next: NextFunction) {
+    try {
+      const program = await loyaltyProgramService.getProgramById(
+        req.params.program_id as string
+      );
+      res.send(successResponse({ program }));
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+
+
 
 export default router;

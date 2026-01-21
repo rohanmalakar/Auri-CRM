@@ -10,7 +10,7 @@ const baseSchema = z.object({
   termsAr: z.string().optional(),
   howToUseEn: z.string().optional(),
   howToUseAr: z.string().optional(),
-  
+
   // Wallet Design
   card_color: z.string().regex(/^#/, "Invalid color"),
   card_title_color: z.string().regex(/^#/, "Invalid color"),
@@ -21,7 +21,7 @@ const baseSchema = z.object({
 // Stamps Specific Schema
 const stampsSchema = baseSchema.extend({
   program_type: z.literal("STAMPS"),
-  
+
   // Rules (stamps_program_rules)
   stamps_target: z.number().min(1, "Target stamps must be at least 1"),
   accrual_rule: z.enum(["PER_VISIT", "PER_ITEM"]),
@@ -30,13 +30,13 @@ const stampsSchema = baseSchema.extend({
   visit_limit_mode: z.string().optional(),
   max_per_window: z.number().optional(),
   limit_scope: z.string().optional(),
-  
+
   // Wallet Specifics
   fulfilled_stamp_icon_key: z.string(),
   fulfilled_stamp_color: z.string(),
   unfulfilled_stamp_icon_key: z.string(),
   unfulfilled_stamp_color: z.string(),
-  
+
   // Terms
   termsEn: z.string().optional(),
   termsAr: z.string().optional(),
@@ -47,7 +47,7 @@ const stampsSchema = baseSchema.extend({
 // Points Specific Schema
 const pointsSchema = baseSchema.extend({
   program_type: z.literal("POINTS"),
-  
+
   // Rules (points_program_rules)
   earn_points_per_currency: z.number().min(0.01, "Rate must be positive"), // 1 point= X SAR
   point_value_currency: z.string().default("SAR"), // Currency code like "SAR"
@@ -56,7 +56,7 @@ const pointsSchema = baseSchema.extend({
   expiry_duration_unit: z.enum(["MONTH", "YEAR"]),
   min_spend_to_earn: z.number().optional(),
   rounding_mode: z.string().optional(),
-  
+
   // Terms
   termsEn: z.string().optional(),
   termsAr: z.string().optional(),
@@ -74,7 +74,7 @@ const freeProductSchema = z.object({
 
 // Discount Object Schema
 const discountSchema = z.object({
-  discount_percentage: z.number().min(0).max(100),
+  discount_percentage: z.number().min(0.01, "Discount must be greater than 0").max(100),
   currency_code: z.string().optional(),
   max_discount_amount: z.number().min(0, "Max discount amount must be at least 0").optional(),
 });
@@ -86,21 +86,21 @@ export const rewardSchema = z.object({
   voucher_name_ar: z.string().min(1, "Name is required"),
   voucher_description_ar: z.string().optional(),
   reward_type: z.enum(["DISCOUNT", "FREE_PRODUCT"]),
-  
+
   // Cost for Stamps/Points
   cost_stamps: z.number().optional(),
   cost_points: z.preprocess(
     (val) => (val === "" ? undefined : val),
     z.number().min(1, "Cost points must be at least 1").optional()
   ),
-  
+
   // Free Product Logic
   product_source: z.preprocess(
     (val) => (val === "" || val === null ? undefined : val),
     z.enum(["INTERNAL", "EXTERNAL"]).optional()
   ),
   free_products: z.array(freeProductSchema).optional(),
-  
+
   // Discount Object
   discount: discountSchema.optional(),
 }).superRefine((data, ctx) => {
@@ -128,10 +128,10 @@ export const rewardSchema = z.object({
 
 // Discriminated Union for Main Form
 export const loyaltyProgramFormSchema = z.discriminatedUnion("program_type", [
-  stampsSchema.extend({ 
+  stampsSchema.extend({
     rewards: z.array(rewardSchema).length(1, "Stamps program can only have one reward")
   }),
-  pointsSchema.extend({ 
+  pointsSchema.extend({
     rewards: z.array(rewardSchema).min(1, "Points program must have at least one reward")
   }),
 ]).superRefine((data, ctx) => {
