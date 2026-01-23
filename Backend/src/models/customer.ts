@@ -22,7 +22,6 @@ export interface CustomerAttributes {
   phone: string;
   email?: string;
   status: 'Active' | 'Inactive' | 'Deleted';
-  qr_token: string;
   joined_at: Date;
   creation_datetime: Date;
 }
@@ -83,14 +82,6 @@ export class OrgCustomer extends Model<CustomerAttributes> {
   })
   status!: 'Active' | 'Inactive' | 'Deleted';
 
-  // Unique Constraint: qr_token
-  @Unique
-  @Default(() => uuidv4()) // Auto-generate if not provided
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  qr_token!: string;
 
   @Default(DataType.NOW)
   @Column({

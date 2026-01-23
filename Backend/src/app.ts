@@ -73,7 +73,7 @@ app.use(cors({
 
   // Sync Sequelize models
   try {
-    await sequelize.sync({ alter: false }); // Use { force: true } to drop tables or { alter: true } to update schema
+    await sequelize.sync({ alter: true }); // Use { force: true } to drop tables or { alter: true } to update schema
     console.log('✅ Sequelize models synced ');
   } catch (err) {
     console.error('❌ Failed to sync Sequelize models:', err);

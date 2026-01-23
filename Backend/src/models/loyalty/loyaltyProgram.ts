@@ -30,6 +30,7 @@ export interface LoyaltyProgramAttributes {
   how_to_use_ar?: string;
   created_at: Date;
   updated_at: Date;
+  qr_code_url: string;
 }
 
 @Table({
@@ -106,6 +107,12 @@ export class LoyaltyProgram extends Model<LoyaltyProgramAttributes> {
     allowNull: true,
   })
   how_to_use_ar?: string;
+  
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  qr_code_url?: string;
 
   @Default('ACTIVE')
   @Column({

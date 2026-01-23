@@ -17,7 +17,7 @@ import { OrgCustomer } from './customer';
 import { LoyaltyProgram } from './loyalty/loyaltyProgram';
 
 export interface CustomerProgramAttributes {
-  id: string;
+  customer: string;
   org_id: string;
   customer_id: string;
   program_id: string;
@@ -25,6 +25,7 @@ export interface CustomerProgramAttributes {
   enrolled_at: Date;
   created_at: Date;
   updated_at: Date;
+  qr_code_url: string;
 }
 
 @Table({
@@ -92,6 +93,12 @@ export class CustomerProgram extends Model<CustomerProgramAttributes> {
     allowNull: false,
   })
   updated_at!: Date;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  qr_code_url!: string;
 
   // Associations
   @BelongsTo(() => Organization)

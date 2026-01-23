@@ -44,6 +44,7 @@ error code starting with 6 is for redeem service flow
 export const ERRORS = {
     NOT_FOUND: new RequestError("Resource not found", 10000, 404),
     DATABASE_ERROR: new RequestError("DATABASE ERROR", 10001, 500),
+    LOYAALTY_PROGRAM_NOT_FOUND: new RequestError("Loyalty program not found", 60002, 404),
     INVALID_REQUEST_BODY: new RequestError("invalid request body", 10002, 400),
     INVALID_INPUT: new RequestError("Invalid data", 10003, 400),
     INVALID_QUERY_PARAMETER: new RequestError("invalid query body", 10004, 400),

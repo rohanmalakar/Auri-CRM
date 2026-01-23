@@ -19,6 +19,7 @@ import Reports from "@/OrgUser/Pages/reports/Reports"
 import ProtectedOrgRoute from "@/components/other/ProtectedOrgRoutes"
 import AddLoyaltyProgram from "./OrgUser/Pages/loyalty/AddLoyaltyProgram"
 import LoyaltyProgramList from "./OrgUser/Pages/loyalty/LoyaltyProgramList"
+import LoyaltyProgramDetail from "./OrgUser/Pages/loyalty/LayaltyProgramDetails"
 
 function App() {
   return (
@@ -62,6 +63,14 @@ function App() {
           element={
             <ProtectedOrgRoute requireAdmin>
               <AddLoyaltyProgram />
+            </ProtectedOrgRoute>
+          } 
+        />
+        <Route 
+          path="/org/loyalty/program/details/:program_id" 
+          element={
+            <ProtectedOrgRoute requireAdmin>
+              <LoyaltyProgramDetail />
             </ProtectedOrgRoute>
           } 
         />

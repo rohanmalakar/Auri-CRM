@@ -33,6 +33,7 @@ export default function AdminLogin() {
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [msg, setMsg] = useState<string>("");
   const dispatch = useAppDispatch();
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Keeping your logic: trimming immediately. 

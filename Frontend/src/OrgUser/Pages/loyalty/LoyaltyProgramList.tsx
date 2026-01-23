@@ -284,7 +284,7 @@ export default function LoyaltyProgramList() {
            progressPending={isLoading}
            highlightOnHover
            pointerOnHover
-           onRowClicked={(row) => navigate(`/org/loyalty/view/${row.program_id}`)}
+           onRowClicked={(row) => navigate(`/org/loyalty/program/details/${row.program_id}`)}
            customStyles={customTableStyles}
         />
       </div>

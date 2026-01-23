@@ -20,6 +20,7 @@ export class CustomerService {
    * Create a new customer
    */
   async createCustomer(data: {
+    customer_id?: string;
     org_id: string;
     name_en: string;
     name_ar: string;

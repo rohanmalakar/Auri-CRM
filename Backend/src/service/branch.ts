@@ -31,7 +31,11 @@ export class BranchService {
     const transaction = await sequelize.transaction();
     try {
       // Verify organization exists
-      await this.organizationRepository.getOrganizationById(data.org_id, transaction);
+      const organization = await this.organizationRepository.getOrganizationById(data.org_id, transaction);
+      
+      if (organization.status !== 'Active') {
+        throw new RequestError('Cannot add branch to an inactive organization', 30102, 400);
+      }
 
       // Check if branch name already exists in this organization
       await this.branchRepository.checkIfBranchExists(

@@ -347,4 +347,21 @@ export default class LoyaltyProgramRepository {
     }
   }
 
-}
+  // check if program exists by id
+  async getProgramById(
+    program_id: string,
+    transaction?: Transaction
+  ): Promise<LoyaltyProgram> {
+    try {
+      const program = await LoyaltyProgram.findByPk(program_id, { transaction }); 
+      if (!program) {
+        throw ERRORS.LOYAALTY_PROGRAM_NOT_FOUND;
+      }
+      return program;
+    } catch (e) {
+      logger.error('Error getting program by ID:', e);
+      throw ERRORS.DATABASE_ERROR;
+    }
+  } 
+}      
+     

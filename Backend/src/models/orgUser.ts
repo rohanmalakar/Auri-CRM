@@ -38,6 +38,7 @@ export class OrgUser extends Model<OrgUserAttributes> {
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    unique: true,
   })
   org_user_id!: string;
 

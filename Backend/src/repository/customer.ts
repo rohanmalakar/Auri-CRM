@@ -83,6 +83,38 @@ export default class CustomerRepository {
   }
 
   /**
+   * Get customer by ID
+   */
+  async getCustomerByPhoneOrNull(
+    phone: string,
+    transaction?: Transaction
+  ): Promise< OrgCustomer | null> {
+    try {
+      const customer = await OrgCustomer.findOne({
+        where: {
+          phone
+        },
+        transaction
+      });
+
+      if (!customer) {
+         return null
+      }
+
+      return customer;
+    } catch (e) {
+      if (e instanceof RequestError) {
+        throw e;
+      }
+      logger.error('Error getting customer by ID:', e);
+      throw ERRORS.DATABASE_ERROR;
+    }
+  }
+
+
+  
+
+  /**
    * Get all customers for an organization
    */
   async getCustomersByOrgId(

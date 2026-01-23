@@ -86,20 +86,20 @@ interface LoyaltyProgramDetail {
 }
 
 export default function LoyaltyProgramDetail() {
-  const { id } = useParams();
+  const { program_id } = useParams();
   const navigate = useNavigate();
   const { language } = useAppSelector((state) => state.settings);
   const isEn = language === 'en';
 
   // Fetch Data
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['loyalty-program', id],
+    queryKey: ['loyalty-program', program_id],
     queryFn: async () => {
       // Adjusted API call based on your prompt
-      const response = await api.get(`/loyalty/programs/detail/${id}`);
+      const response = await api.get(`/loyalty/programs/detail/${program_id}`);
       return response.data;
     },
-    enabled: !!id,
+    enabled: !!program_id,
   });
 
   if (isLoading) {
